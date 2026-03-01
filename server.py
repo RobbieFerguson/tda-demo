@@ -194,11 +194,12 @@ class Handler(SimpleHTTPRequestHandler):
     def _wikipedia_image(self, query):
         """Search Wikipedia for a relevant article thumbnail."""
         from urllib.parse import quote
+        import re
         try:
-            # 1. Search for best-matching article
+            # 1. Search for best-matching articles
             search_url = (
                 'https://en.wikipedia.org/w/api.php?action=query&list=search'
-                f'&srsearch={quote(query)}&format=json&srlimit=3'
+                f'&srsearch={quote(query)}&format=json&srlimit=5'
             )
             req = urllib.request.Request(search_url, headers={'User-Agent': 'TDA-Carousel/1.0'})
             with urllib.request.urlopen(req, timeout=6) as r:
@@ -206,22 +207,28 @@ class Handler(SimpleHTTPRequestHandler):
             if not results:
                 return None
 
-            # 2. Get the page image for the top result
-            title = results[0]['title']
-            img_url = (
-                'https://en.wikipedia.org/w/api.php?action=query'
-                f'&titles={quote(title)}&prop=pageimages&format=json&pithumbsize=1200'
+            # Sort by word overlap with query so we pick the most relevant article
+            q_words = set(query.lower().split())
+            results.sort(
+                key=lambda r: len(set(r['title'].lower().split()) & q_words),
+                reverse=True
             )
-            req = urllib.request.Request(img_url, headers={'User-Agent': 'TDA-Carousel/1.0'})
-            with urllib.request.urlopen(req, timeout=6) as r:
-                pages = json.loads(r.read()).get('query', {}).get('pages', {})
-            for page in pages.values():
-                src = page.get('thumbnail', {}).get('source')
-                if src:
-                    # Scale up to largest available version
-                    import re
-                    src = re.sub(r'/\d+px-', '/1200px-', src)
-                    return src
+
+            # 2. Try each candidate until we find one with an image
+            for result in results[:4]:
+                title = result['title']
+                img_url = (
+                    'https://en.wikipedia.org/w/api.php?action=query'
+                    f'&titles={quote(title)}&prop=pageimages&format=json&pithumbsize=1200'
+                )
+                req = urllib.request.Request(img_url, headers={'User-Agent': 'TDA-Carousel/1.0'})
+                with urllib.request.urlopen(req, timeout=6) as r:
+                    pages = json.loads(r.read()).get('query', {}).get('pages', {})
+                for page in pages.values():
+                    src = page.get('thumbnail', {}).get('source')
+                    if src:
+                        src = re.sub(r'/\d+px-', '/1200px-', src)
+                        return src
         except Exception:
             pass
         return None

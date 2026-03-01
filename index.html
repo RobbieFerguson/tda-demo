@@ -7,6 +7,88 @@
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&display=swap" rel="stylesheet"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
+    /* ── Passcode gate ───────────────────────── */
+    #gate {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--dark, #111);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .gate-box {
+      background: #1a1a2e;
+      border-radius: 20px;
+      padding: 40px 36px;
+      text-align: center;
+      width: 320px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+    .gate-logo {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 900;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .gate-title {
+      font-family: 'Anton', sans-serif;
+      font-size: 28px;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+    .gate-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+    #gate-input {
+      width: 100%;
+      padding: 13px 16px;
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: #fff;
+      text-align: center;
+      letter-spacing: .08em;
+      outline: none;
+      transition: border-color .18s;
+      margin-bottom: 14px;
+    }
+    #gate-input:focus { border-color: #5333DC; }
+    #gate-input.shake {
+      animation: gateshake .35s ease;
+      border-color: #E8493A;
+    }
+    @keyframes gateshake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-6px); }
+      80%      { transform: translateX(6px); }
+    }
+    #gate-btn {
+      width: 100%;
+      padding: 13px;
+      background: #5333DC;
+      color: #fff;
+      border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 800;
+      cursor: pointer;
+      transition: background .18s;
+    }
+    #gate-btn:hover { background: #3f22b8; }
+    #gate-error {
+      font-size: 12px;
+      color: #E8493A;
+      margin-top: 10px;
+      height: 16px;
+    }
+  </style>
+  <style>
     :root {
       --purple:  #5333DC;
       --purple-light: #C4B5FD;
@@ -604,6 +686,18 @@
   </style>
 </head>
 <body>
+
+<!-- ── Passcode gate ── -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">The Daily Aus</div>
+    <div class="gate-title">Members only.</div>
+    <div class="gate-sub">Enter the passcode to continue.</div>
+    <input type="password" id="gate-input" placeholder="passcode" autocomplete="off" onkeydown="if(event.key==='Enter')checkGate()"/>
+    <button id="gate-btn" onclick="checkGate()">Enter →</button>
+    <div id="gate-error"></div>
+  </div>
+</div>
 
 <div class="header">
   <div class="header-logo">TDA</div>
@@ -1221,6 +1315,25 @@ ${story}`;
     return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  /* ── Passcode gate ─────────────────────────── */
+  function checkGate() {
+    const val = document.getElementById('gate-input').value.trim().toLowerCase();
+    if (val === 'secretsauce') {
+      localStorage.setItem('tda_access', '1');
+      document.getElementById('gate').style.display = 'none';
+    } else {
+      const inp = document.getElementById('gate-input');
+      inp.classList.remove('shake');
+      void inp.offsetWidth; // reflow to restart animation
+      inp.classList.add('shake');
+      document.getElementById('gate-error').textContent = 'Wrong passcode. Try again.';
+      inp.value = '';
+    }
+  }
+  if (localStorage.getItem('tda_access') === '1') {
+    document.getElementById('gate').style.display = 'none';
+  }
 
   /* ── Init ──────────────────────────────────── */
   loadNews();

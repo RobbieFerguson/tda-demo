@@ -32,25 +32,33 @@ class handler(BaseHTTPRequestHandler):
         try:
             s_url = (
                 'https://en.wikipedia.org/w/api.php?action=query&list=search'
-                f'&srsearch={quote(query)}&format=json&srlimit=3'
+                f'&srsearch={quote(query)}&format=json&srlimit=5'
             )
             req = urllib.request.Request(s_url, headers={'User-Agent': 'TDA-Carousel/1.0'})
             with urllib.request.urlopen(req, timeout=6) as r:
                 results = json.loads(r.read()).get('query', {}).get('search', [])
             if not results: return None
 
-            title = results[0]['title']
-            i_url = (
-                f'https://en.wikipedia.org/w/api.php?action=query'
-                f'&titles={quote(title)}&prop=pageimages&format=json&pithumbsize=1200'
+            # Sort results by how many query words appear in the article title
+            q_words = set(query.lower().split())
+            results.sort(
+                key=lambda r: len(set(r['title'].lower().split()) & q_words),
+                reverse=True
             )
-            req = urllib.request.Request(i_url, headers={'User-Agent': 'TDA-Carousel/1.0'})
-            with urllib.request.urlopen(req, timeout=6) as r:
-                pages = json.loads(r.read()).get('query', {}).get('pages', {})
-            for page in pages.values():
-                src = page.get('thumbnail', {}).get('source')
-                if src:
-                    return re.sub(r'/\d+px-', '/1200px-', src)
+
+            for result in results[:4]:
+                title = result['title']
+                i_url = (
+                    f'https://en.wikipedia.org/w/api.php?action=query'
+                    f'&titles={quote(title)}&prop=pageimages&format=json&pithumbsize=1200'
+                )
+                req = urllib.request.Request(i_url, headers={'User-Agent': 'TDA-Carousel/1.0'})
+                with urllib.request.urlopen(req, timeout=6) as r:
+                    pages = json.loads(r.read()).get('query', {}).get('pages', {})
+                for page in pages.values():
+                    src = page.get('thumbnail', {}).get('source')
+                    if src:
+                        return re.sub(r'/\d+px-', '/1200px-', src)
         except Exception:
             pass
         return None
