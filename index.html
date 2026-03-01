@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Daily Aus — Carousel Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root {
+      --purple:  #5333DC;
+      --purple-light: #C4B5FD;
+      --yellow:  #FFE03A;
+      --coral:   #E8493A;
+      --indigo:  #4F46E5;
+      --dark:    #111111;
+      --black:   #000000;
+      --white:   #FFFFFF;
+      --border:  #E0E0E0;
+      --light:   #F5F5F5;
+      --mid:     #555;
+    }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #E8E8E8;
+      color: var(--dark);
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────── */
+    .header {
+      background: var(--dark);
+      padding: 13px 28px;
+      display: flex; align-items: center; gap: 12px;
+      position: sticky; top: 0; z-index: 20;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.35);
+    }
+    .header-logo {
+      width: 32px; height: 32px;
+      background: var(--purple);
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 11px; color: #fff;
+    }
+    .header h1 { color: #fff; font-size: 16px; font-weight: 700; }
+    .header h1 span { color: var(--purple-light); }
+
+    /* ── Billi avatar ───────────────────────── */
+    .billi-wrap {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      position: relative;
+    }
+    .billi-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      border: 2.5px solid var(--purple-light);
+      object-fit: cover;
+      display: block;
+      cursor: default;
+      flex-shrink: 0;
+    }
+    .billi-bubble {
+      position: absolute;
+      right: 50px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--purple);
+      color: var(--white);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 11px;
+      border-radius: 12px 12px 0 12px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity .4s;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .billi-bubble.show { opacity: 1; }
+    .billi-name {
+      font-size: 10px;
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      margin-top: 1px;
+      display: block;
+      white-space: nowrap;
+    }
+
+    /* ── Layout ─────────────────────────────── */
+    .main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 28px 20px;
+      display: grid;
+      grid-template-columns: 260px 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media(max-width:1100px){ .main{ grid-template-columns: 380px 1fr; } .news-panel{ display:none!important; } }
+    @media(max-width:860px){ .main{ grid-template-columns:1fr; } }
+
+    /* ── News Ticker Panel ─────────────────── */
+    .news-panel {
+      background: #16213e;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.18);
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 100px);
+      position: sticky;
+      top: 75px;
+    }
+    .news-panel-header {
+      padding: 14px 16px;
+      background: #0f0f1a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+    .live-badge {
+      background: var(--coral);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: .06em;
+      animation: livepulse 2s ease-in-out infinite;
+    }
+    @keyframes livepulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .news-panel-title {
+      color: rgba(255,255,255,0.85);
+      font-size: 13px;
+      font-weight: 700;
+      flex: 1;
+    }
+    .refresh-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.35);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 5px;
+      border-radius: 4px;
+      transition: color .18s;
+      line-height: 1;
+    }
+    .refresh-btn:hover { color: rgba(255,255,255,0.85); }
+    .refresh-btn.spinning { animation: spin .7s linear infinite; }
+    .news-list {
+      overflow-y: auto;
+      flex: 1;
+    }
+    .news-list::-webkit-scrollbar { width: 3px; }
+    .news-list::-webkit-scrollbar-track { background: transparent; }
+    .news-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+    .news-item {
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      cursor: pointer;
+      transition: background .18s;
+    }
+    .news-item:hover { background: rgba(255,255,255,0.06); }
+    .news-item:hover .news-title { color: var(--purple-light); }
+    .news-item.active-item { background: rgba(83,51,220,0.25); border-left: 3px solid var(--purple); }
+    .news-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.45;
+      margin-bottom: 6px;
+      transition: color .18s;
+    }
+    .news-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .news-source {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--purple-light);
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .news-time {
+      font-size: 10px;
+      color: rgba(255,255,255,0.28);
+    }
+    .news-skeleton {
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .skel-line {
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      animation: skelpulse 1.4s ease-in-out infinite;
+    }
+    @keyframes skelpulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* ── Generating overlay ──────────────── */
+    .gen-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.93);
+      border-radius: 16px;
+      z-index: 10;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+    }
+    .gen-overlay.show { display: flex; }
+    .gen-cup-anim {
+      animation: cupbounce 0.65s ease-in-out infinite alternate;
+    }
+    @keyframes cupbounce {
+      from { transform: translateY(0) rotate(-4deg); }
+      to   { transform: translateY(-14px) rotate(4deg); }
+    }
+    .gen-status {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--purple);
+      text-align: center;
+    }
+
+    /* ── Cards ──────────────────────────────── */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    }
+    .card-title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .card-sub   { font-size: 13px; color: var(--mid); margin-bottom: 22px; line-height: 1.5; }
+
+    /* ── Form ───────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+    label { display:block; font-size:12px; font-weight:700; margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; color:#444; }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      background: var(--light);
+      color: var(--dark);
+      outline: none;
+      transition: border-color .18s, background .18s;
+    }
+    input[type="text"]:focus, textarea:focus { border-color: var(--purple); background: #fff; }
+    textarea { min-height: 180px; resize: vertical; line-height: 1.6; }
+    .hint { font-size: 11px; color: #aaa; margin-top: 4px; }
+
+    .url-row { display:flex; gap:8px; }
+    .url-row input { flex:1; }
+    .fetch-btn {
+      padding: 10px 15px;
+      background: var(--purple); color: #fff;
+      border: none; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background .18s;
+    }
+    .fetch-btn:hover:not(:disabled) { background: #3f22b8; }
+    .fetch-btn:disabled { opacity:.5; cursor:not-allowed; }
+
+    .divider {
+      display:flex; align-items:center; gap:10px;
+      color:#ccc; font-size:12px; font-weight:500; margin:6px 0;
+    }
+    .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    .source-badge {
+      display:none; align-items:center; gap:8px;
+      padding:7px 12px; background:#f0fdf4; border:1.5px solid #bbf7d0;
+      border-radius:8px; font-size:12px; color:#166534; margin-bottom:6px;
+    }
+    .source-badge.on { display:flex; }
+    .source-badge a { color:#166534; text-decoration:underline; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+    .clear-src { margin-left:auto; background:none; border:none; cursor:pointer; color:#999; font-size:14px; }
+    .clear-src:hover { color:var(--dark); }
+
+    .gen-btn {
+      width: 100%; padding: 14px;
+      background: var(--purple); color: #fff;
+      border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 800;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .18s, transform .15s;
+    }
+    .gen-btn:hover:not(:disabled) { background: #3f22b8; transform: translateY(-1px); }
+    .gen-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+
+    .spinner {
+      width:17px; height:17px;
+      border:2.5px solid rgba(255,255,255,.3);
+      border-top-color:#fff; border-radius:50%;
+      animation:spin .75s linear infinite; display:none;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .error-box {
+      display:none; margin-top:12px; padding:12px 14px;
+      background:#fff4f4; border:1.5px solid #ffd0d0;
+      border-radius:10px; font-size:13px; color:#c62828; line-height:1.5;
+    }
+
+    /* ── Preview panel ──────────────────────── */
+    .preview-header {
+      display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;
+    }
+    .prev-actions { display:flex; gap:8px; }
+    .act-btn {
+      padding:7px 13px; border:1.5px solid var(--border); border-radius:8px;
+      background:#fff; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:700;
+      cursor:pointer; color:var(--dark); transition:all .18s;
+    }
+    .act-btn:hover { border-color:var(--purple); color:var(--purple); }
+    .act-btn.dark  { background:var(--dark); color:#fff; border-color:var(--dark); }
+    .act-btn.dark:hover { background:var(--coral); border-color:var(--coral); }
+
+    /* ── Empty state ────────────────────────── */
+    .empty-state { text-align:center; padding:60px 20px; color:#bbb; }
+    .empty-state .icon { font-size:48px; margin-bottom:12px; }
+    .empty-state p { font-size:14px; line-height:1.6; }
+
+    /* ── Carousel viewer ────────────────────── */
+    #carousel-viewer { display:none; }
+    .carousel-wrap { max-width: 400px; margin: 0 auto; }
+
+    /* Instagram frame */
+    .ig-frame { border:1.5px solid var(--border); border-radius:14px; overflow:hidden; background:#fff; }
+    .ig-topbar {
+      display:flex; align-items:center; gap:9px; padding:9px 13px;
+      border-bottom:1px solid var(--border);
+    }
+    .ig-avatar {
+      width:28px; height:28px; border-radius:50%;
+      background:var(--purple); display:flex; align-items:center; justify-content:center;
+      font-size:9px; font-weight:900; color:#fff; flex-shrink:0;
+    }
+    .ig-handle { font-size:12px; font-weight:700; }
+    .ig-verified { color:#1DA1F2; font-size:11px; margin-left:2px; }
+    .ig-more { margin-left:auto; color:#999; font-size:18px; letter-spacing:2px; line-height:1; }
+
+    /* Slide window — 4:5 portrait */
+    .slide-window {
+      width:100%; aspect-ratio:4/5; position:relative; overflow:hidden;
+      background:#eee;
+    }
+
+    /* ═══════════════════════════════════════════
+       SLIDES
+    ═══════════════════════════════════════════ */
+    .slide {
+      position:absolute; inset:0;
+      display:none; flex-direction:column;
+    }
+    .slide.active { display:flex; }
+
+    /* ── Hook slide (yellow) ─────────────────── */
+    .slide-hook {
+      background: var(--yellow);
+      padding: 18px 20px 20px;
+      justify-content: space-between;
+    }
+    .hook-handle {
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 800; font-size: 13px; color: var(--black);
+      letter-spacing: .01em;
+    }
+    .hook-headline {
+      font-family: 'Anton', sans-serif;
+      font-size: clamp(22px, 7.5cqw, 36px);
+      line-height: 1.05;
+      color: var(--black);
+      flex-shrink: 0;
+    }
+    .hook-headline .w { color: #1a1a1a; }
+
+    .hook-img-wrap {
+      flex: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.12);
+      min-height: 0;
+      position: relative;
+    }
+    .hook-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block;
+    }
+    .hook-img-placeholder {
+      width:100%; height:100%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:24px; color:rgba(0,0,0,0.25);
+    }
+
+    .hook-footer {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-shrink: 0;
+      margin-top: 8px;
+    }
+    .hook-cta {
+      font-family: 'Anton', sans-serif;
+      font-size: clamp(18px, 5.5cqw, 28px);
+      color: var(--black);
+      line-height: 1.1;
+      max-width: 75%;
+    }
+
+    /* ── Content slide (coral) ───────────────── */
+    .slide-content {
+      background: var(--coral);
+      padding: 16px 18px 14px;
+      gap: 12px;
+    }
+    .content-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+    .content-label {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 5px 14px 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 900; font-size: clamp(18px, 5.5cqw, 26px);
+      color: var(--coral);
+      line-height: 1.2;
+    }
+    .content-card {
+      flex: 1;
+      background: var(--white);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .content-card p {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(13px, 3.8cqw, 17px);
+      line-height: 1.55;
+      color: var(--black);
+    }
+    .content-card .hl {
+      color: var(--coral);
+      text-decoration: underline;
+      font-weight: 700;
+    }
+
+    /* Image inside a content slide card */
+    .card-img {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #ddd;
+      position: relative;
+    }
+    .card-img img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 25%; display: block;
+    }
+    .card-img-caption {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.55));
+      color: rgba(255,255,255,0.85);
+      font-size: 9px;
+      padding: 12px 8px 5px;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .content-card.has-img {
+      padding: 0 0 14px 0;
+      overflow: hidden;
+    }
+    .content-card.has-img .card-img { border-radius: 0; height: 44%; }
+    .content-card.has-img .card-text { padding: 12px 16px 0; display:flex; flex-direction:column; gap:8px; }
+    .content-card.has-img p { font-size: clamp(11px, 3.2cqw, 14px); }
+    .content-footer {
+      text-align: center;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 900; font-size: 10px;
+      color: rgba(255,255,255,0.75);
+      letter-spacing: .18em;
+      flex-shrink: 0;
+    }
+
+    /* ── CTA slide (dark) ────────────────────── */
+    .slide-cta {
+      background: var(--dark);
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 28px 24px;
+      text-align: center;
+    }
+    .cta-tagline {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,.4);
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .slide-cta h2 {
+      font-family: 'Anton', sans-serif;
+      font-size: clamp(26px, 7cqw, 38px);
+      color: var(--white);
+      line-height: 1.05;
+    }
+    .slide-cta p {
+      color: rgba(255,255,255,.6);
+      font-size: clamp(13px, 3.5cqw, 16px);
+      line-height: 1.55;
+      max-width: 240px;
+    }
+    .cta-handle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(16px, 4.5cqw, 22px);
+      font-weight: 900;
+      color: var(--yellow);
+    }
+    .cta-deco {
+      position: absolute;
+      bottom: -60px; left: -60px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(255,224,58,.05);
+    }
+
+    /* ── TDA Cup SVG ─────────────────────────── */
+    .tda-cup { flex-shrink: 0; }
+
+    /* ── Navigation ─────────────────────────── */
+    .carousel-nav {
+      display: flex; align-items: center; justify-content: center;
+      gap: 12px; margin-top: 14px;
+    }
+    .nav-btn {
+      width:36px; height:36px; border-radius:50%;
+      border:1.5px solid var(--border); background:#fff;
+      font-size:14px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      transition:all .18s; color:var(--dark);
+    }
+    .nav-btn:hover:not(:disabled) { border-color:var(--purple); color:var(--purple); }
+    .nav-btn:disabled { opacity:.25; cursor:not-allowed; }
+
+    .dots { display:flex; gap:5px; align-items:center; }
+    .dot  { width:6px; height:6px; border-radius:3px; background:var(--border); cursor:pointer; transition:all .2s; }
+    .dot.active { width:18px; background:var(--purple); }
+
+    /* ── Caption box ────────────────────────── */
+    .caption-box {
+      margin-top:16px; background:var(--light); border-radius:12px; padding:14px 16px;
+    }
+    .caption-label {
+      font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;
+      color:#999; margin-bottom:7px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .copy-btn {
+      font-size:11px; font-weight:700; color:var(--purple);
+      background:none; border:none; cursor:pointer;
+      font-family:'DM Sans',sans-serif; text-transform:none; letter-spacing:0;
+    }
+    .copy-btn:hover { text-decoration:underline; }
+    .caption-text { font-size:13px; color:#333; line-height:1.6; }
+    .hashtags     { margin-top:7px; font-size:12px; color:#3897f0; line-height:1.6; }
+
+    /* container queries for slide font scaling */
+    .slide-window { container-type: inline-size; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">TDA</div>
+  <h1>The Daily Aus <span>Carousel Generator</span></h1>
+  <div class="billi-wrap" id="billi-wrap">
+    <div class="billi-bubble" id="billi-bubble">Great piece!</div>
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <img class="billi-avatar"
+        src="/billi.jpg"
+        alt="Billi Fitzsimons"
+      />
+      <span class="billi-name">Billi, Editor</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── News Ticker ── -->
+  <div class="news-panel">
+    <div class="news-panel-header">
+      <span class="live-badge">● LIVE</span>
+      <span class="news-panel-title">Breaking News</span>
+      <button class="refresh-btn" id="refresh-btn" onclick="loadNews()" title="Refresh">↻</button>
+    </div>
+    <div class="news-list" id="news-list">
+      <div class="news-skeleton"><div class="skel-line" style="height:12px;width:92%;margin-bottom:5px"></div><div class="skel-line" style="height:12px;width:70%"></div><div class="skel-line" style="height:9px;width:40%;margin-top:7px"></div></div>
+      <div class="news-skeleton"><div class="skel-line" style="height:12px;width:85%;margin-bottom:5px"></div><div class="skel-line" style="height:12px;width:60%"></div><div class="skel-line" style="height:9px;width:35%;margin-top:7px"></div></div>
+      <div class="news-skeleton"><div class="skel-line" style="height:12px;width:95%;margin-bottom:5px"></div><div class="skel-line" style="height:12px;width:75%"></div><div class="skel-line" style="height:9px;width:45%;margin-top:7px"></div></div>
+      <div class="news-skeleton"><div class="skel-line" style="height:12px;width:80%;margin-bottom:5px"></div><div class="skel-line" style="height:12px;width:65%"></div></div>
+      <div class="news-skeleton"><div class="skel-line" style="height:12px;width:88%;margin-bottom:5px"></div><div class="skel-line" style="height:12px;width:72%"></div></div>
+    </div>
+  </div>
+
+  <!-- ── Input ── -->
+  <div class="card">
+    <div class="card-title">Create a Carousel</div>
+    <div class="card-sub">Paste a URL or article text — Claude turns it into a TDA-style Instagram carousel.</div>
+
+    <div class="form-group">
+      <label>Article URL <span style="font-weight:500;color:#bbb;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div class="url-row">
+        <input type="text" id="article-url" placeholder="https://thedailyaus.com.au/stories/..."/>
+        <button class="fetch-btn" id="fetch-btn" onclick="fetchArticle()">
+          <span id="fetch-label">⬇ Fetch</span>
+        </button>
+      </div>
+      <div class="hint">Paste a link — we'll extract the article automatically.</div>
+    </div>
+
+    <div class="divider">or paste text directly</div>
+
+    <div class="form-group">
+      <label>Article Text</label>
+      <div class="source-badge" id="source-badge">
+        <span>📎 Fetched from:</span>
+        <a id="source-link" href="#" target="_blank"></a>
+        <button class="clear-src" onclick="clearFetch()" title="Clear">✕</button>
+      </div>
+      <textarea id="story" placeholder="Paste article text, press release, or transcript here…"></textarea>
+    </div>
+
+    <button class="gen-btn" id="gen-btn" onclick="generate()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btn-label">✨ Generate Carousel</span>
+    </button>
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <!-- ── Preview ── -->
+  <div class="card" style="position:relative">
+    <div class="gen-overlay" id="gen-overlay">
+      <div class="gen-cup-anim" id="gen-cup-anim"></div>
+      <div class="gen-status" id="gen-status">Generating your carousel</div>
+    </div>
+
+    <div class="preview-header">
+      <div class="card-title" style="margin:0">Preview</div>
+      <div class="prev-actions">
+        <button class="act-btn" id="dl-slide" style="display:none" onclick="downloadCurrent()">⬇ Slide</button>
+        <button class="act-btn dark" id="dl-all" style="display:none" onclick="downloadAll()">⬇ All Slides</button>
+      </div>
+    </div>
+
+    <div class="empty-state" id="empty-state">
+      <div class="icon">📱</div>
+      <p>Your carousel will appear here.<br/>Paste a story and hit <strong>Generate Carousel</strong>.</p>
+    </div>
+
+    <div id="carousel-viewer">
+      <div class="carousel-wrap">
+
+        <div class="ig-frame">
+          <div class="ig-topbar">
+            <div class="ig-avatar">TDA</div>
+            <div><span class="ig-handle">thedailyaus</span><span class="ig-verified">✓</span></div>
+            <div class="ig-more">···</div>
+          </div>
+          <div class="slide-window" id="slide-window"></div>
+        </div>
+
+        <div class="carousel-nav">
+          <button class="nav-btn" id="prev-btn" onclick="go(-1)">←</button>
+          <div class="dots" id="dots"></div>
+          <button class="nav-btn" id="next-btn" onclick="go(1)">→</button>
+        </div>
+
+        <div class="caption-box">
+          <div class="caption-label">
+            Instagram Caption
+            <button class="copy-btn" onclick="copyCaption()">Copy</button>
+          </div>
+          <div class="caption-text" id="caption-text"></div>
+          <div class="hashtags" id="hashtags-text"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let cur = 0, total = 0, captionFull = '';
+
+  /* ── Billi speech bubble ───────────────────── */
+  const billiQuotes = [
+    'Great piece! 🙌',
+    'Love this one!',
+    'Chef\'s kiss 🤌',
+    'This is fire 🔥',
+    'Billi approved ✅',
+    'Sending this to the team!',
+    'Our readers will love it!',
+    'Publish it! 🚀',
+    'This is the vibe.',
+    'Not bad for a robot 😏',
+  ];
+  function billiBubble() {
+    const el = document.getElementById('billi-bubble');
+    el.textContent = billiQuotes[Math.floor(Math.random() * billiQuotes.length)];
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3200);
+  }
+  function maybeBilli() { if (Math.random() < 0.4) billiBubble(); }
+
+  /* ── TDA Cup SVG ───────────────────────────── */
+  function cup(variant = 'indigo', size = 40) {
+    const h = Math.round(size * 1.55);
+    const [fill, steam, txt, line] = variant === 'indigo'
+      ? ['#4F46E5', '#4F46E5', '#fff', 'rgba(255,255,255,0.25)']
+      : ['#fff',    '#fff',    '#4F46E5', 'rgba(79,70,229,0.15)'];
+    return `<svg class="tda-cup" width="${size}" height="${h}" viewBox="0 0 44 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 13 C15 10.5 11 8 13 5.5 C15 3 11 1 13 0" stroke="${steam}" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M22 13 C24 10.5 20 8 22 5.5 C24 3 20 1 22 0" stroke="${steam}" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M31 13 C33 10.5 29 8 31 5.5 C33 3 29 1 31 0" stroke="${steam}" stroke-width="2" stroke-linecap="round" fill="none"/>
+      <path d="M4 16 L40 16 L35.5 58 Q34.5 64 22 64 Q9.5 64 8.5 58 Z" fill="${fill}"/>
+      <rect x="4" y="16" width="36" height="5" fill="${line}" rx="0"/>
+      <line x1="9" y1="30" x2="35" y2="30" stroke="${line}" stroke-width="1.5"/>
+      <text x="22" y="47" text-anchor="middle" fill="${txt}" font-size="13" font-weight="900" font-family="Arial Black, Arial, sans-serif" letter-spacing="1">TDA</text>
+    </svg>`;
+  }
+
+  /* ── Generating overlay ─────────────────────── */
+  const genMessages = [
+    'Reading the story',
+    'Checking the facts',
+    'Writing the slides',
+    'Choosing the words',
+    'Picking the images',
+    'Almost there',
+  ];
+  let genMsgInterval = null;
+
+  function startGenOverlay() {
+    document.getElementById('gen-cup-anim').innerHTML = cup('indigo', 60);
+    const statusEl = document.getElementById('gen-status');
+    let i = 0, dots = 0;
+    statusEl.textContent = genMessages[0] + '...';
+    genMsgInterval = setInterval(() => {
+      dots = (dots + 1) % 4;
+      if (dots === 0) i = (i + 1) % genMessages.length;
+      statusEl.textContent = genMessages[i] + '.'.repeat(dots || 3);
+    }, 500);
+    document.getElementById('gen-overlay').classList.add('show');
+  }
+
+  function stopGenOverlay() {
+    clearInterval(genMsgInterval);
+    genMsgInterval = null;
+    document.getElementById('gen-overlay').classList.remove('show');
+  }
+
+  /* ── News ticker ────────────────────────────── */
+  let activeStoryUrl = null;
+
+  async function loadNews() {
+    const listEl  = document.getElementById('news-list');
+    const refresh = document.getElementById('refresh-btn');
+    refresh.classList.add('spinning');
+    try {
+      const res  = await fetch('/news');
+      const data = await res.json();
+      if (!res.ok || !data.stories) throw new Error('No stories');
+      listEl.innerHTML = '';
+      data.stories.forEach(story => {
+        const item = document.createElement('div');
+        item.className = 'news-item' + (story.url === activeStoryUrl ? ' active-item' : '');
+        item.innerHTML = `
+          <div class="news-title">${escStr(story.title)}</div>
+          <div class="news-meta">
+            <span class="news-source">${escStr(story.source)}</span>
+            <span class="news-time">${escStr(story.timeAgo)}</span>
+          </div>
+        `;
+        item.addEventListener('click', () => selectStory(story, item));
+        listEl.appendChild(item);
+      });
+    } catch(e) {
+      listEl.innerHTML = `<div style="padding:20px 16px;color:rgba(255,255,255,0.35);font-size:12px;">Could not load news. <button onclick="loadNews()" style="background:none;border:none;color:var(--purple-light);cursor:pointer;font-size:12px;font-family:inherit;text-decoration:underline;">Try again</button></div>`;
+    } finally {
+      refresh.classList.remove('spinning');
+    }
+  }
+
+  async function selectStory(story, itemEl) {
+    document.querySelectorAll('.news-item').forEach(el => el.classList.remove('active-item'));
+    if (itemEl) itemEl.classList.add('active-item');
+    activeStoryUrl = story.url;
+
+    document.getElementById('article-url').value = story.url;
+    document.getElementById('error-box').style.display = 'none';
+
+    const fetchBtn = document.getElementById('fetch-btn');
+    const fetchLbl = document.getElementById('fetch-label');
+    fetchBtn.disabled = true; fetchLbl.textContent = '…';
+
+    let storyText = '';
+    try {
+      const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: story.url}) });
+      const data = await res.json();
+      if (res.ok && data.text && data.text.length > 80) {
+        storyText = data.text;
+        const badge = document.getElementById('source-badge');
+        const link  = document.getElementById('source-link');
+        try { link.textContent = new URL(story.url).hostname.replace('www.',''); } catch(e) { link.textContent = story.source; }
+        link.href = story.url;
+        badge.classList.add('on');
+      } else {
+        storyText = story.title;
+      }
+    } catch(e) {
+      storyText = story.title;
+    } finally {
+      fetchBtn.disabled = false; fetchLbl.textContent = '⬇ Fetch';
+    }
+
+    document.getElementById('story').value = storyText;
+    generate();
+  }
+
+  function escStr(s = '') {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Fetch article ──────────────────────────── */
+  async function fetchArticle() {
+    const url = document.getElementById('article-url').value.trim();
+    const errEl = document.getElementById('error-box');
+    errEl.style.display = 'none';
+    if (!url) { showError('Enter a URL first.'); return; }
+    if (!url.startsWith('http')) { showError('Please enter a full URL starting with https://'); return; }
+
+    const btn = document.getElementById('fetch-btn');
+    const lbl = document.getElementById('fetch-label');
+    btn.disabled = true; lbl.textContent = '…';
+
+    try {
+      const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || 'Fetch failed');
+
+      document.getElementById('story').value = data.text;
+      const badge = document.getElementById('source-badge');
+      const link  = document.getElementById('source-link');
+      link.href = url;
+      link.textContent = new URL(url).hostname.replace('www.','');
+      badge.classList.add('on');
+    } catch(e) {
+      showError('Could not fetch: ' + e.message);
+    } finally {
+      btn.disabled = false; lbl.textContent = '⬇ Fetch';
+    }
+  }
+
+  function clearFetch() {
+    document.getElementById('story').value = '';
+    document.getElementById('article-url').value = '';
+    document.getElementById('source-badge').classList.remove('on');
+  }
+
+  /* ── Generate ───────────────────────────────── */
+  async function generate() {
+    const story = document.getElementById('story').value.trim();
+    const errEl = document.getElementById('error-box');
+    errEl.style.display = 'none';
+    if (!story) { showError('Please paste a news story or fetch a URL first.'); return; }
+
+    setLoading(true);
+    startGenOverlay();
+    try {
+      const res  = await fetch('/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt: buildPrompt(story)}) });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error?.message || JSON.stringify(data.error) || 'API error');
+      const text  = data.content[0].text;
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('Could not parse response — try again.');
+      render(JSON.parse(match[0]));
+    } catch(e) {
+      showError(e.message);
+    } finally {
+      stopGenOverlay();
+      setLoading(false);
+    }
+  }
+
+  /* ── Prompt ─────────────────────────────────── */
+  function buildPrompt(story) {
+    return `You write Instagram carousels for The Daily Aus. The Daily Aus explains the news to young Australians in plain, clear English. Think of it like texting a smart friend who knows what is going on.
+
+━━━ WRITING RULES (follow every single one) ━━━
+
+VOCABULARY: Only use words from the 3,000 most common English words. If you must use a harder word (like "parliament" or "inflation"), explain it straight away in brackets. Example: "The Reserve Bank (the government body that sets interest rates) said..."
+
+SENTENCES: Keep every sentence under 20 words. Use full stops. No sentence fragments.
+
+TONE: Write like you are talking to a friend. Warm. Direct. Clear. Never talk down to the reader.
+
+FACTS ONLY: Every claim needs a PRIMARY source. A primary source is the actual person, organisation, or document where the information came from first — not another news article or website writing about it. Good examples: "Prime Minister Anthony Albanese said...", "According to the Australian Bureau of Statistics report...", "The court document states...", "In a statement, the company said...". Never cite a news article as your source. Only cite the original person or document.
+
+NEUTRAL ALWAYS: Do not use words that take sides. Say "said" not "claimed". Say "argued" not "blasted". Give all sides equal space.
+
+EXPLAIN EVERYTHING: Never assume the reader knows what something means. If you mention a law, say what it does. If you mention a person, say who they are.
+
+━━━ CAROUSEL STRUCTURE ━━━
+
+Create between 4 and 7 slides total. Choose the number that fits the story — do not pad it out. Every slide must earn its place.
+
+Always start with a hook slide. Always end with a CTA slide. Fill the middle with 2 to 5 content slides that cover what happened, why it matters, and what comes next.
+
+━━━ IMAGES ━━━
+
+Add "imageQuery" to 2 or 3 slides. The image must directly match what the slide is about. If the slide talks about Anthony Albanese, search for Anthony Albanese. If it is about the Reserve Bank building, search for that. Be specific. Write the query like a Wikipedia article title.
+
+━━━ OUTPUT ━━━
+
+Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
+
+{
+  "slides": [
+    {
+      "type": "hook",
+      "headline": "Short, punchy, factual. Max 10 words. Can end with a colon:",
+      "cta": "Here is what you need to know.",
+      "imageQuery": "Specific Wikipedia-style image query directly matching this story"
+    },
+    {
+      "type": "content",
+      "label": "What happened",
+      "paragraphs": [
+        "One or two clear sentences saying what happened, who was involved, and when.",
+        "<hl>Hard word explained:</hl> A plain English explanation of any tricky term used above.",
+        "One more fact that adds important detail. Say who reported this."
+      ]
+    },
+    {
+      "type": "content",
+      "label": "Why it happened",
+      "imageQuery": "Only add this if an image would help explain this slide. Be specific.",
+      "paragraphs": [
+        "The background. Why did this situation start? Keep it simple.",
+        "One key fact that explains the cause.",
+        "How things got to this point."
+      ]
+    },
+    {
+      "type": "content",
+      "label": "What people say",
+      "imageQuery": "Image of the main person quoted on this slide, if helpful",
+      "paragraphs": [
+        "What one side said, with their name and role. Use their exact words if possible.",
+        "What the other side said, with their name and role.",
+        "<hl>Key point:</hl> The one fact both sides agree on, if any."
+      ]
+    },
+    {
+      "type": "content",
+      "label": "What this means for you",
+      "paragraphs": [
+        "The direct effect on everyday Australians. Be specific.",
+        "What happens next and when.",
+        "<hl>Bottom line:</hl> The one thing to remember from this story."
+      ]
+    },
+    {
+      "type": "cta",
+      "headline": "Stay in the loop",
+      "subtext": "Simple, clear news every day — follow us for more"
+    }
+  ],
+  "caption": "Two or three clear sentences summing up the story. No opinion. End with a simple question to get people talking.",
+  "hashtags": ["TheDailyAus", "AustralianNews", "relevant1", "relevant2", "relevant3"]
+}
+
+Only include the slides that are needed. Cut any slide that does not add something new. 4 to 7 slides total.
+
+News story:
+${story}`;
+  }
+
+  /* ── Render carousel ────────────────────────── */
+  function render(data) {
+    const win  = document.getElementById('slide-window');
+    const dots = document.getElementById('dots');
+    win.innerHTML = ''; dots.innerHTML = '';
+
+    const slides = data.slides || [];
+    total = slides.length; cur = 0;
+
+    slides.forEach((s, i) => {
+      const el = makeSlide(s, i, total);
+      if (i === 0) el.classList.add('active');
+      win.appendChild(el);
+
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === 0 ? ' active' : '');
+      d.onclick = () => goTo(i);
+      dots.appendChild(d);
+    });
+
+    captionFull = (data.caption || '') + '\n\n' + (data.hashtags || []).map(h => '#'+h).join(' ');
+    document.getElementById('caption-text').textContent = data.caption || '';
+    document.getElementById('hashtags-text').textContent = (data.hashtags || []).map(h => '#'+h).join(' ');
+
+    document.getElementById('empty-state').style.display  = 'none';
+    document.getElementById('carousel-viewer').style.display = 'block';
+    document.getElementById('dl-slide').style.display = 'inline-block';
+    document.getElementById('dl-all').style.display   = 'inline-block';
+    updateNav();
+    setTimeout(billiBubble, 600);
+  }
+
+  /* ── Build slide elements ───────────────────── */
+  function makeSlide(s, i, total) {
+    const div = document.createElement('div');
+    div.className = 'slide';
+
+    if (s.type === 'hook') {
+      div.classList.add('slide-hook');
+
+      const imgQuery = encodeURIComponent(s.imageQuery || 'australia news');
+      const imgWrap  = document.createElement('div');
+      imgWrap.className = 'hook-img-wrap';
+
+      const img = document.createElement('img');
+      img.crossOrigin = 'anonymous';
+      img.src = `/image?q=${imgQuery}`;
+      img.alt = s.imageQuery || '';
+      img.onerror = () => {
+        imgWrap.innerHTML = `<div class="hook-img-placeholder">🖼️</div>`;
+      };
+      imgWrap.appendChild(img);
+
+      div.innerHTML = `
+        <div class="hook-handle">@TheDailyAus</div>
+        <div class="hook-headline">${esc(s.headline)}</div>
+      `;
+      div.appendChild(imgWrap);
+      div.innerHTML += `
+        <div class="hook-footer">
+          <div class="hook-cta">${esc(s.cta || "Here's the context.")}</div>
+          ${cup('indigo', 42)}
+        </div>
+      `;
+
+    } else if (s.type === 'content') {
+      div.classList.add('slide-content');
+
+      const paras = (s.paragraphs || []).map(p =>
+        `<p>${parseHL(p)}</p>`
+      ).join('');
+
+      if (s.imageQuery) {
+        const imgQuery = encodeURIComponent(s.imageQuery);
+        div.innerHTML = `
+          <div class="content-top">
+            <div class="content-label">${esc(s.label)}</div>
+            ${cup('white', 38)}
+          </div>
+          <div class="content-card has-img">
+            <div class="card-img">
+              <img src="/image?q=${imgQuery}" crossOrigin="anonymous"
+                   alt="${esc(s.imageQuery)}"
+                   onerror="this.parentElement.style.display='none'"/>
+            </div>
+            <div class="card-text">${paras}</div>
+          </div>
+          <div class="content-footer">THE · DAILY · AUS</div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div class="content-top">
+            <div class="content-label">${esc(s.label)}</div>
+            ${cup('white', 38)}
+          </div>
+          <div class="content-card"><div class="card-text" style="padding:0;gap:10px;display:flex;flex-direction:column;">${paras}</div></div>
+          <div class="content-footer">THE · DAILY · AUS</div>
+        `;
+      }
+
+    } else if (s.type === 'cta') {
+      div.classList.add('slide-cta');
+      div.innerHTML = `
+        <div class="cta-deco"></div>
+        <div class="cta-tagline">THE DAILY AUS</div>
+        ${cup('indigo', 52)}
+        <h2>${esc(s.headline)}</h2>
+        <p>${esc(s.subtext)}</p>
+        <div class="cta-handle">@thedailyaus</div>
+      `;
+    }
+
+    return div;
+  }
+
+  /* Parse <hl>text</hl> → underlined coral span */
+  function parseHL(str) {
+    return esc(str).replace(/&lt;hl&gt;(.*?)&lt;\/hl&gt;/g, '<span class="hl">$1</span>');
+  }
+
+  /* ── Navigation ────────────────────────────── */
+  function go(dir) { goTo(cur + dir); }
+  function goTo(n) {
+    if (n < 0 || n >= total) return;
+    document.querySelectorAll('.slide')[cur].classList.remove('active');
+    document.querySelectorAll('.dot')[cur].classList.remove('active');
+    cur = n;
+    document.querySelectorAll('.slide')[cur].classList.add('active');
+    document.querySelectorAll('.dot')[cur].classList.add('active');
+    updateNav();
+    maybeBilli();
+  }
+  function updateNav() {
+    document.getElementById('prev-btn').disabled = cur === 0;
+    document.getElementById('next-btn').disabled = cur === total - 1;
+  }
+
+  /* ── Download ──────────────────────────────── */
+  async function downloadCurrent() { await captureSlide(cur); }
+
+  async function downloadAll() {
+    const btn = document.getElementById('dl-all');
+    btn.textContent = 'Downloading…'; btn.disabled = true;
+    const saved = cur;
+    for (let i = 0; i < total; i++) {
+      goTo(i); await delay(100);
+      await captureSlide(i); await delay(220);
+    }
+    goTo(saved);
+    btn.textContent = '⬇ All Slides'; btn.disabled = false;
+  }
+
+  async function captureSlide(idx) {
+    const slides = document.querySelectorAll('.slide');
+    const el = slides[idx];
+    const hidden = !el.classList.contains('active');
+    if (hidden) el.style.cssText = 'display:flex;position:absolute;z-index:-1;';
+    try {
+      const canvas = await html2canvas(el, {
+        scale: 3, useCORS: true, allowTaint: true,
+        backgroundColor: null,
+        width: el.offsetWidth, height: el.offsetHeight
+      });
+      const a = document.createElement('a');
+      a.download = `tda-slide-${idx+1}.png`;
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    } catch(e) {
+      alert(`Couldn't download slide ${idx+1}. Try right-click → Save Image.`);
+    } finally {
+      if (hidden) el.style.cssText = '';
+    }
+  }
+
+  /* ── Copy caption ──────────────────────────── */
+  function copyCaption() {
+    navigator.clipboard.writeText(captionFull).then(() => {
+      const b = document.querySelector('.copy-btn');
+      b.textContent = 'Copied!';
+      setTimeout(() => b.textContent = 'Copy', 1800);
+    });
+  }
+
+  /* ── Helpers ───────────────────────────────── */
+  function setLoading(on) {
+    document.getElementById('gen-btn').disabled = on;
+    document.getElementById('spinner').style.display = on ? 'block' : 'none';
+    document.getElementById('btn-label').textContent = on ? 'Generating…' : '✨ Generate Carousel';
+  }
+  function showError(msg) {
+    const el = document.getElementById('error-box');
+    el.textContent = msg; el.style.display = 'block';
+  }
+  function esc(s='') {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  /* ── Init ──────────────────────────────────── */
+  loadNews();
+  setInterval(loadNews, 5 * 60 * 1000);
+</script>
+</body>
+</html>

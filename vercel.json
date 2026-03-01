@@ -1,0 +1,9 @@
+{
+  "outputDirectory": "public",
+  "functions": {
+    "api/generate.py": { "maxDuration": 60 },
+    "api/fetch.py":    { "maxDuration": 30 },
+    "api/image.py":    { "maxDuration": 30 },
+    "api/news.py":     { "maxDuration": 30 }
+  }
+}
