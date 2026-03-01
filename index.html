@@ -320,12 +320,78 @@
       from { transform: translateY(0) rotate(-4deg); }
       to   { transform: translateY(-14px) rotate(4deg); }
     }
-    .gen-status {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--purple);
-      text-align: center;
+    /* ── Gen phase steps ─────────────────────── */
+    .gen-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      width: 210px;
     }
+    .gen-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #ccc;
+      transition: color .3s;
+    }
+    .gen-step.active { color: var(--purple); }
+    .gen-step.done   { color: #22c55e; }
+    .step-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #ddd;
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .gen-step.active .step-dot {
+      background: var(--purple);
+      animation: steppulse 1s ease-in-out infinite;
+    }
+    .gen-step.done .step-dot { background: #22c55e; }
+    @keyframes steppulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(83,51,220,0.4); }
+      50%       { transform: scale(1.4); box-shadow: 0 0 0 5px rgba(83,51,220,0); }
+    }
+
+    /* ── Sources panel ───────────────────────── */
+    .sources-box {
+      margin-top: 12px;
+      background: var(--light);
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+    .sources-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #999;
+      margin-bottom: 8px;
+    }
+    .sources-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .source-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 11px;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--purple);
+      text-decoration: none;
+      transition: all .18s;
+      max-width: 280px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .source-chip:hover { border-color: var(--purple); background: var(--purple); color: #fff; }
+    .source-chip-plain { color: #777; cursor: default; }
+    .source-chip-plain:hover { background: #fff; border-color: var(--border); color: #777; }
 
     /* ── Cards ──────────────────────────────── */
     .card {
@@ -734,7 +800,7 @@
   <!-- ── Input ── -->
   <div class="card">
     <div class="card-title">Create a Carousel</div>
-    <div class="card-sub">Paste a URL or article text — Claude turns it into a TDA-style Instagram carousel.</div>
+    <div class="card-sub">Paste a URL or article text. Claude finds the primary sources, reads them, then writes your carousel.</div>
 
     <div class="form-group">
       <label>Article URL <span style="font-weight:500;color:#bbb;text-transform:none;letter-spacing:0">(optional)</span></label>
@@ -770,7 +836,11 @@
   <div class="card" style="position:relative">
     <div class="gen-overlay" id="gen-overlay">
       <div class="gen-cup-anim" id="gen-cup-anim"></div>
-      <div class="gen-status" id="gen-status">Generating your carousel</div>
+      <div class="gen-steps">
+        <div class="gen-step" id="gen-step-0"><span class="step-dot"></span><span>Finding primary sources</span></div>
+        <div class="gen-step" id="gen-step-1"><span class="step-dot"></span><span>Reading source documents</span></div>
+        <div class="gen-step" id="gen-step-2"><span class="step-dot"></span><span>Writing your carousel</span></div>
+      </div>
     </div>
 
     <div class="preview-header">
@@ -811,6 +881,11 @@
           </div>
           <div class="caption-text" id="caption-text"></div>
           <div class="hashtags" id="hashtags-text"></div>
+        </div>
+
+        <div class="sources-box" id="sources-box" style="display:none">
+          <div class="sources-label">Primary Sources</div>
+          <div class="sources-list" id="sources-list"></div>
         </div>
 
       </div>
@@ -861,33 +936,20 @@
   }
 
   /* ── Generating overlay ─────────────────────── */
-  const genMessages = [
-    'Reading the story',
-    'Checking the facts',
-    'Writing the slides',
-    'Choosing the words',
-    'Picking the images',
-    'Almost there',
-  ];
-  let genMsgInterval = null;
-
   function startGenOverlay() {
-    document.getElementById('gen-cup-anim').innerHTML = cup('indigo', 60);
-    const statusEl = document.getElementById('gen-status');
-    let i = 0, dots = 0;
-    statusEl.textContent = genMessages[0] + '...';
-    genMsgInterval = setInterval(() => {
-      dots = (dots + 1) % 4;
-      if (dots === 0) i = (i + 1) % genMessages.length;
-      statusEl.textContent = genMessages[i] + '.'.repeat(dots || 3);
-    }, 500);
+    document.getElementById('gen-cup-anim').innerHTML = cup('indigo', 52);
+    setGenPhase(0);
     document.getElementById('gen-overlay').classList.add('show');
   }
-
   function stopGenOverlay() {
-    clearInterval(genMsgInterval);
-    genMsgInterval = null;
     document.getElementById('gen-overlay').classList.remove('show');
+  }
+  function setGenPhase(n) {
+    document.querySelectorAll('.gen-step').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      if (i < n) el.classList.add('done');
+      else if (i === n) el.classList.add('active');
+    });
   }
 
   /* ── News ticker ────────────────────────────── */
@@ -1007,14 +1069,32 @@
 
     setLoading(true);
     startGenOverlay();
+    let sources = [];
     try {
-      const res  = await fetch('/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt: buildPrompt(story)}) });
+      // Phase 1 — identify primary sources
+      setGenPhase(0);
+      const srcRes  = await fetch('/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt: buildSourcesPrompt(story)}) });
+      const srcData = await srcRes.json();
+      if (srcRes.ok && srcData.content) {
+        try {
+          const m = srcData.content[0].text.match(/\{[\s\S]*\}/);
+          if (m) sources = JSON.parse(m[0]).sources || [];
+        } catch(e) {}
+      }
+
+      // Phase 2 — fetch primary source content
+      setGenPhase(1);
+      const fetchedSources = await fetchPrimarySources(sources);
+
+      // Phase 3 — generate carousel
+      setGenPhase(2);
+      const res  = await fetch('/generate', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({prompt: buildCarouselPrompt(story, fetchedSources)}) });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error?.message || JSON.stringify(data.error) || 'API error');
       const text  = data.content[0].text;
       const match = text.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('Could not parse response — try again.');
-      render(JSON.parse(match[0]));
+      render(JSON.parse(match[0]), fetchedSources);
     } catch(e) {
       showError(e.message);
     } finally {
@@ -1117,8 +1197,63 @@ News story:
 ${story}`;
   }
 
+  /* ── Source identification prompt ──────────── */
+  function buildSourcesPrompt(article) {
+    return `You are a research assistant. Read this news article and identify the primary sources it draws from.
+
+A PRIMARY SOURCE is the original document, statement, or data — NOT another news article. Examples: official government or UN statements, press releases, research reports, court documents, speech transcripts, statistics from official bodies, quotes attributed to named officials in their official capacity.
+
+Return ONLY valid JSON. No markdown. No explanation.
+
+{
+  "sources": [
+    {
+      "name": "Full descriptive name of the source (e.g. 'UN Secretary-General statement on Gaza ceasefire')",
+      "organisation": "Organisation that produced it (e.g. 'United Nations')",
+      "type": "statement|report|speech|data|document",
+      "url": "Direct URL if explicitly mentioned in the article text, otherwise null"
+    }
+  ]
+}
+
+Return up to 4 of the most important primary sources. Fewer is fine if fewer exist.
+
+Article:
+${article}`;
+  }
+
+  /* ── Fetch primary source content ──────────── */
+  async function fetchPrimarySources(sources) {
+    const results = [];
+    for (const s of (sources || []).slice(0, 4)) {
+      if (s.url) {
+        try {
+          const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: s.url}) });
+          const data = await res.json();
+          if (res.ok && data.text && data.text.length > 100) {
+            results.push({...s, content: data.text.slice(0, 3000)});
+            continue;
+          }
+        } catch(e) {}
+      }
+      results.push(s);
+    }
+    return results;
+  }
+
+  /* ── Carousel prompt with source context ───── */
+  function buildCarouselPrompt(article, sources) {
+    const withContent = (sources || []).filter(s => s.content);
+    let ctx = '';
+    if (withContent.length > 0) {
+      ctx = '\n\n━━━ PRIMARY SOURCE DOCUMENTS (use these as your factual basis) ━━━\n\n' +
+        withContent.map(s => `SOURCE: ${s.name} — ${s.organisation}\n${s.content}`).join('\n\n---\n\n');
+    }
+    return buildPrompt(article + ctx);
+  }
+
   /* ── Render carousel ────────────────────────── */
-  function render(data) {
+  function render(data, sources) {
     const win  = document.getElementById('slide-window');
     const dots = document.getElementById('dots');
     win.innerHTML = ''; dots.innerHTML = '';
@@ -1146,6 +1281,23 @@ ${story}`;
     document.getElementById('dl-slide').style.display = 'inline-block';
     document.getElementById('dl-all').style.display   = 'inline-block';
     updateNav();
+
+    // Show primary sources panel
+    const sourcesBox  = document.getElementById('sources-box');
+    const sourcesList = document.getElementById('sources-list');
+    const allSources  = sources || [];
+    if (allSources.length > 0) {
+      sourcesList.innerHTML = allSources.map(s => {
+        if (s.url) {
+          return `<a class="source-chip" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.name)}">↗ ${esc(s.name)}</a>`;
+        }
+        return `<span class="source-chip source-chip-plain" title="${esc(s.organisation || '')}">${esc(s.name)}</span>`;
+      }).join('');
+      sourcesBox.style.display = 'block';
+    } else {
+      sourcesBox.style.display = 'none';
+    }
+
     setTimeout(billiBubble, 600);
   }
 
