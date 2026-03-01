@@ -802,6 +802,40 @@
     }
     @media(max-width:1100px) { .news-strip { display: block; } }
 
+    /* ── Mobile strip hint ───────────────────── */
+    .strip-hint {
+      display: none;
+      text-align: center;
+      padding: 7px 16px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.38);
+      background: #16213e;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      letter-spacing: .02em;
+      transition: opacity .4s;
+    }
+    .strip-hint.hide { opacity: 0; pointer-events: none; }
+    @media(max-width:1100px) { .strip-hint { display: block; } }
+
+    /* ── Swipe hint on slide ─────────────────── */
+    .swipe-hint {
+      position: absolute;
+      bottom: 10px; left: 50%; transform: translateX(-50%);
+      font-size: 10px; font-weight: 700;
+      color: rgba(255,255,255,0.45);
+      letter-spacing: .06em;
+      pointer-events: none;
+      animation: swipefade 3s ease forwards;
+      white-space: nowrap;
+    }
+    @keyframes swipefade {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; }
+      75%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
     /* container queries for slide font scaling */
     .slide-window { container-type: inline-size; }
   </style>
@@ -844,6 +878,7 @@
     <div class="strip-skel"><div class="skel-line" style="height:11px;width:88%;margin-bottom:5px"></div><div class="skel-line" style="height:11px;width:55%"></div></div>
   </div>
 </div>
+<div class="strip-hint" id="strip-hint">Tap a story above to instantly generate a carousel ↑</div>
 
 <div class="main">
 
@@ -1075,6 +1110,8 @@
     document.querySelectorAll('.news-item').forEach(el => el.classList.remove('active-item'));
     document.querySelectorAll('.strip-card').forEach(el => el.classList.remove('active-strip'));
     if (itemEl) itemEl.classList.add('active-item');
+    const stripHint = document.getElementById('strip-hint');
+    if (stripHint) stripHint.classList.add('hide');
     document.querySelectorAll(`.strip-card[data-url="${CSS.escape(story.url)}"]`).forEach(el => el.classList.add('active-strip'));
     activeStoryUrl = story.url;
 
@@ -1288,19 +1325,30 @@ ${story}`;
 
   /* ── Source identification prompt ──────────── */
   function buildSourcesPrompt(article) {
-    return `You are a research assistant. Read this news article and identify the primary sources it draws from.
+    return `You are a research assistant for a journalism organisation. Read this news article and identify the official primary sources it draws from.
 
-A PRIMARY SOURCE is the original document, statement, or data — NOT another news article. Examples: official government or UN statements, press releases, research reports, court documents, speech transcripts, statistics from official bodies, quotes attributed to named officials in their official capacity.
+In journalism, a PRIMARY SOURCE is the original, authoritative document or statement — not another news article, blog, or commentary website. Accepted primary sources include:
+- Official government statements, press releases, or departmental reports
+- Court documents, judgements, or legal filings
+- UN, WHO, or other intergovernmental body statements and reports
+- Central bank or treasury publications and data
+- Official company statements or regulatory filings (ASX, SEC)
+- Parliamentary Hansard transcripts or committee reports
+- Peer-reviewed research papers or official statistics (ABS, ONS, etc.)
+- Direct quotes from named officials speaking in their official capacity
+
+DO NOT list news articles, media outlets, or third-party commentary as primary sources.
 
 Return ONLY valid JSON. No markdown. No explanation.
 
 {
   "sources": [
     {
-      "name": "Full descriptive name of the source (e.g. 'UN Secretary-General statement on Gaza ceasefire')",
+      "name": "Full descriptive name (e.g. 'UN Secretary-General statement on Gaza ceasefire')",
       "organisation": "Organisation that produced it (e.g. 'United Nations')",
       "type": "statement|report|speech|data|document",
-      "url": "Direct URL if explicitly mentioned in the article text, otherwise null"
+      "url": "Direct URL if explicitly mentioned in the article text, otherwise null",
+      "org_url": "Main website of the organisation (e.g. 'https://un.org', 'https://abs.gov.au') — always include this"
     }
   ]
 }
@@ -1315,9 +1363,10 @@ ${article}`;
   async function fetchPrimarySources(sources) {
     const results = [];
     for (const s of (sources || []).slice(0, 4)) {
-      if (s.url) {
+      const tryUrl = s.url || s.org_url;
+      if (tryUrl) {
         try {
-          const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: s.url}) });
+          const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: tryUrl}) });
           const data = await res.json();
           if (res.ok && data.text && data.text.length > 100) {
             results.push({...s, content: data.text.slice(0, 3000)});
@@ -1371,6 +1420,15 @@ ${article}`;
     document.getElementById('dl-all').style.display   = 'inline-block';
     updateNav();
 
+    // Swipe hint (mobile, fades out via CSS animation)
+    if (total > 1 && window.matchMedia('(max-width:1100px)').matches) {
+      const sh = document.createElement('div');
+      sh.className = 'swipe-hint';
+      sh.textContent = '← SWIPE →';
+      win.appendChild(sh);
+      setTimeout(() => sh.remove(), 3200);
+    }
+
     // Show primary sources panel
     const sourcesBox  = document.getElementById('sources-box');
     const sourcesList = document.getElementById('sources-list');
@@ -1379,6 +1437,9 @@ ${article}`;
       sourcesList.innerHTML = allSources.map(s => {
         if (s.url) {
           return `<a class="source-chip" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.name)}">↗ ${esc(s.name)}</a>`;
+        }
+        if (s.org_url) {
+          return `<a class="source-chip" href="${esc(s.org_url)}" target="_blank" rel="noopener" title="${esc(s.name)}">${esc(s.name)}</a>`;
         }
         return `<span class="source-chip source-chip-plain" title="${esc(s.organisation || '')}">${esc(s.name)}</span>`;
       }).join('');
@@ -1574,6 +1635,17 @@ ${article}`;
   if (localStorage.getItem('tda_access') === '1') {
     document.getElementById('gate').style.display = 'none';
   }
+
+  /* ── Touch swipe on carousel ───────────────── */
+  (function() {
+    let txStart = 0;
+    const sw = document.getElementById('slide-window');
+    sw.addEventListener('touchstart', e => { txStart = e.touches[0].clientX; }, {passive: true});
+    sw.addEventListener('touchend', e => {
+      const dx = e.changedTouches[0].clientX - txStart;
+      if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+    }, {passive: true});
+  })();
 
   /* ── Init ──────────────────────────────────── */
   loadNews();
