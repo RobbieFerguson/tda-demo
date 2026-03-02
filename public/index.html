@@ -727,8 +727,8 @@
       background: rgba(255,224,58,.05);
     }
 
-    /* ── TDA Cup SVG ─────────────────────────── */
-    .tda-cup { flex-shrink: 0; }
+    /* ── TDA Cup logo ────────────────────────── */
+    .tda-cup { flex-shrink: 0; display: block; object-fit: contain; }
 
     /* ── Navigation ─────────────────────────── */
     .carousel-nav {
@@ -1040,34 +1040,20 @@
   function maybeBilli() { if (Math.random() < 0.4) billiBubble(); }
 
   /* ── Official TDA brand logos ──────────────── */
+  // tda-cup.png  = white cup with purple TDA (use on coral / dark backgrounds)
+  // tda-full.png = purple THE DAILY AUS cup    (use on white / yellow backgrounds)
 
-  // Right logo: takeaway cup with T·D·A stacked (main logo for carousel images)
-  // variant='indigo' → purple cup with white letters
-  // variant='white'  → white cup with purple letters
   function cup(variant = 'indigo', size = 40) {
-    const h    = Math.round(size * 1.42);
-    const fill = variant === 'indigo' ? '#5333DC' : '#ffffff';
-    const txt  = variant === 'indigo' ? '#ffffff' : '#5333DC';
-    return `<svg class="tda-cup" width="${size}" height="${h}" viewBox="0 0 60 86" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 18 L57 13 L59 24 L3 27 Z" fill="${fill}"/>
-      <path d="M3 27 L59 24 L52 83 L10 83 Z" fill="${fill}"/>
-      <text x="30" y="47" text-anchor="middle" fill="${txt}" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif">T</text>
-      <text x="30" y="63" text-anchor="middle" fill="${txt}" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif">D</text>
-      <text x="30" y="79" text-anchor="middle" fill="${txt}" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif">A</text>
-    </svg>`;
+    const h   = Math.round(size / 0.755);
+    // 'indigo' context = light/yellow bg  → purple full logo reads well
+    // 'white'  context = coral/dark bg    → white TDA cup reads well
+    const src = variant === 'indigo' ? '/tda-full.png' : '/tda-cup.png';
+    return `<img class="tda-cup" src="${src}" width="${size}" height="${h}" alt="TDA" draggable="false">`;
   }
 
-  // Left logo: purple cup with THE DAILY AUS (for header/branding areas)
   function cupFull(size = 36) {
-    const h = Math.round(size * 1.28);
-    return `<svg class="tda-cup" width="${size}" height="${h}" viewBox="0 0 60 77" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="8" y="7" width="44" height="14" rx="3" fill="#5333DC"/>
-      <ellipse cx="30" cy="12" rx="14" ry="4.5" fill="rgba(255,255,255,0.2)"/>
-      <path d="M8 21 L52 21 L46 74 L14 74 Z" fill="#5333DC"/>
-      <text x="30" y="38" text-anchor="middle" fill="white" font-size="10" font-weight="900" font-family="Arial Black, Arial, sans-serif">THE</text>
-      <text x="30" y="52" text-anchor="middle" fill="white" font-size="10" font-weight="900" font-family="Arial Black, Arial, sans-serif">DAILY</text>
-      <text x="30" y="66" text-anchor="middle" fill="white" font-size="10" font-weight="900" font-family="Arial Black, Arial, sans-serif">AUS</text>
-    </svg>`;
+    const h = Math.round(size / 0.755);
+    return `<img class="tda-cup" src="/tda-full.png" width="${size}" height="${h}" alt="The Daily Aus" draggable="false">`;
   }
 
   /* ── Generating overlay ─────────────────────── */
