@@ -602,12 +602,19 @@
       line-height: 1.1;
       max-width: 75%;
     }
+    .hook-swipe {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(11px, 2.8cqw, 13px);
+      font-weight: 600;
+      color: rgba(0,0,0,0.45);
+      margin-top: 5px;
+    }
 
     /* ── Content slide (coral) ───────────────── */
     .slide-content {
       background: var(--coral);
       padding: 16px 18px 14px;
-      gap: 16px;
+      gap: 12px;
     }
     .content-top {
       display: flex;
@@ -620,41 +627,50 @@
       border-radius: 10px;
       padding: 5px 14px 6px;
       font-family: 'DM Sans', sans-serif;
-      font-weight: 900; font-size: clamp(18px, 5.5cqw, 26px);
+      font-weight: 900; font-size: clamp(16px, 4.5cqw, 22px);
       color: var(--coral);
       line-height: 1.2;
     }
+
+    /* Large bold text directly on background */
+    .content-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 16px;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .content-body p {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(20px, 5.8cqw, 32px);
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--white);
+      margin: 0;
+    }
+    .content-body p .hl {
+      color: var(--yellow);
+      font-weight: 900;
+    }
+
+    /* Image slides — card with image */
     .content-card {
       flex: 1;
       background: var(--white);
       border-radius: 14px;
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
       overflow: hidden;
       min-height: 0;
+      display: flex;
+      flex-direction: column;
     }
-    .content-card p {
-      font-family: 'DM Sans', sans-serif;
-      font-size: clamp(12px, 3.4cqw, 15px);
-      line-height: 1.5;
-      color: var(--black);
-    }
-    .content-card .hl {
-      color: var(--coral);
-      text-decoration: underline;
-      font-weight: 700;
-    }
-
-    /* Image inside a content slide card */
     .card-img {
       width: 100%;
-      border-radius: 8px;
-      overflow: hidden;
       flex-shrink: 0;
       background: #ddd;
       position: relative;
+      height: 44%;
     }
     .card-img img {
       width: 100%; height: 100%;
@@ -669,13 +685,26 @@
       padding: 12px 8px 5px;
       font-family: 'DM Sans', sans-serif;
     }
-    .content-card.has-img {
-      padding: 0 0 12px 0;
+    .card-text {
+      flex: 1;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       overflow: hidden;
     }
-    .content-card.has-img .card-img { border-radius: 0; height: 38%; }
-    .content-card.has-img .card-text { padding: 8px 14px 0; display:flex; flex-direction:column; gap:5px; }
-    .content-card.has-img p { font-size: clamp(11px, 2.9cqw, 13px); line-height: 1.45; }
+    .content-card p {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(13px, 3.6cqw, 17px);
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--black);
+      margin: 0;
+    }
+    .content-card p .hl {
+      color: var(--coral);
+      font-weight: 900;
+    }
     .content-footer {
       text-align: center;
       font-family: 'DM Sans', sans-serif;
@@ -1144,7 +1173,7 @@
 
     let storyText = '';
     try {
-      const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: story.url}) });
+      const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: story.url}) });
       const data = await res.json();
       if (res.ok && data.text && data.text.length > 80) {
         storyText = data.text;
@@ -1183,7 +1212,7 @@
     btn.disabled = true; lbl.textContent = '…';
 
     try {
-      const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) });
+      const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Fetch failed');
 
@@ -1273,6 +1302,8 @@ Create between 4 and 7 slides total. Choose the number that fits the story — d
 
 Always start with a hook slide. Always end with a CTA slide. Fill the middle with 2 to 5 content slides that cover what happened, why it matters, and what comes next.
 
+PARAGRAPHS: Each content slide gets exactly 2 paragraphs. Each paragraph is one punchy sentence — max 20 words. The text must be large and bold, so keep it short and impactful. Less is more.
+
 ━━━ IMAGES ━━━
 
 Add "imageQuery" to 2 or 3 slides. The image must directly match what the slide is about. If the slide talks about Anthony Albanese, search for Anthony Albanese. If it is about the Reserve Bank building, search for that. Be specific. Write the query like a Wikipedia article title.
@@ -1293,9 +1324,8 @@ Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
       "type": "content",
       "label": "What happened",
       "paragraphs": [
-        "One or two clear sentences saying what happened, who was involved, and when.",
-        "<hl>Hard word explained:</hl> A plain English explanation of any tricky term used above.",
-        "One more fact that adds important detail. Say who reported this."
+        "One punchy sentence. What happened, who, when. Max 20 words.",
+        "<hl>Key term:</hl> Plain English explanation of one important word from above."
       ]
     },
     {
@@ -1303,9 +1333,8 @@ Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
       "label": "Why it happened",
       "imageQuery": "Only add this if an image would help explain this slide. Be specific.",
       "paragraphs": [
-        "The background. Why did this situation start? Keep it simple.",
-        "One key fact that explains the cause.",
-        "How things got to this point."
+        "One sentence on the background. Why did this start? Max 20 words.",
+        "One key fact that explains the cause. Max 20 words."
       ]
     },
     {
@@ -1313,18 +1342,16 @@ Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
       "label": "What people say",
       "imageQuery": "Image of the main person quoted on this slide, if helpful",
       "paragraphs": [
-        "What one side said, with their name and role. Use their exact words if possible.",
-        "What the other side said, with their name and role.",
-        "<hl>Key point:</hl> The one fact both sides agree on, if any."
+        "What one side said. Name and role. Max 20 words.",
+        "What the other side said. Name and role. Max 20 words."
       ]
     },
     {
       "type": "content",
       "label": "What this means for you",
       "paragraphs": [
-        "The direct effect on everyday Australians. Be specific.",
-        "What happens next and when.",
-        "<hl>Bottom line:</hl> The one thing to remember from this story."
+        "The direct effect on everyday Australians. Specific. Max 20 words.",
+        "<hl>Bottom line:</hl> The one thing to remember. Max 15 words."
       ]
     },
     {
@@ -1392,7 +1419,7 @@ ${article}`;
       // Only fetch the specific document URL — org homepages are too generic
       if (s.url) {
         try {
-          const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: s.url}) });
+          const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: s.url}) });
           const data = await res.json();
           if (res.ok && data.text && data.text.length > 100) {
             results.push({...s, content: data.text.slice(0, 4000), fetched: true});
@@ -1515,7 +1542,10 @@ ${article}`;
       div.appendChild(imgWrap);
       div.innerHTML += `
         <div class="hook-footer">
-          <div class="hook-cta">${esc(s.cta || "Here's the context.")}</div>
+          <div>
+            <div class="hook-cta">${esc(s.cta || "Here's the context.")}</div>
+            <div class="hook-swipe">Swipe for the full story →</div>
+          </div>
           ${cup('indigo', 42)}
         </div>
       `;
@@ -1534,7 +1564,7 @@ ${article}`;
             <div class="content-label">${esc(s.label)}</div>
             ${cup('white', 38)}
           </div>
-          <div class="content-card has-img">
+          <div class="content-card">
             <div class="card-img">
               <img src="/image?q=${imgQuery}" crossOrigin="anonymous"
                    alt="${esc(s.imageQuery)}"
@@ -1550,7 +1580,7 @@ ${article}`;
             <div class="content-label">${esc(s.label)}</div>
             ${cup('white', 38)}
           </div>
-          <div class="content-card"><div class="card-text" style="padding:0;gap:10px;display:flex;flex-direction:column;">${paras}</div></div>
+          <div class="content-body">${paras}</div>
           <div class="content-footer">THE · DAILY · AUS</div>
         `;
       }
