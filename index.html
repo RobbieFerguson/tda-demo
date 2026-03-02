@@ -981,7 +981,6 @@
             <button class="copy-btn" onclick="copyCaption()">Copy</button>
           </div>
           <div class="caption-text" id="caption-text"></div>
-          <div class="hashtags" id="hashtags-text"></div>
         </div>
 
         <div class="sources-box" id="sources-box" style="display:none">
@@ -1313,7 +1312,7 @@ Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
       "subtext": "Simple, clear news every day — follow us for more"
     }
   ],
-  "caption": "Two or three clear sentences summing up the story. No opinion. End with a simple question to get people talking.",
+  "caption": "Two or three clear sentences summing up the story. No opinion. No rhetorical questions. Just the facts, plainly stated.",
   "hashtags": ["TheDailyAus", "AustralianNews", "relevant1", "relevant2", "relevant3"]
 }
 
@@ -1421,9 +1420,8 @@ ${article}`;
       dots.appendChild(d);
     });
 
-    captionFull = (data.caption || '') + '\n\n' + (data.hashtags || []).map(h => '#'+h).join(' ');
+    captionFull = data.caption || '';
     document.getElementById('caption-text').textContent = data.caption || '';
-    document.getElementById('hashtags-text').textContent = (data.hashtags || []).map(h => '#'+h).join(' ');
 
     document.getElementById('empty-state').style.display  = 'none';
     document.getElementById('carousel-viewer').style.display = 'block';
