@@ -996,6 +996,7 @@
 
 <script>
   let cur = 0, total = 0, captionFull = '';
+  let activeOgImage = '';
 
   /* ── Billi speech bubble ───────────────────── */
   const billiQuotes = [
@@ -1127,6 +1128,7 @@
       const data = await res.json();
       if (res.ok && data.text && data.text.length > 80) {
         storyText = data.text;
+        activeOgImage = data.og_image || '';
         const badge = document.getElementById('source-badge');
         const link  = document.getElementById('source-link');
         try { link.textContent = new URL(story.url).hostname.replace('www.',''); } catch(e) { link.textContent = story.source; }
@@ -1167,6 +1169,7 @@
       if (!res.ok || data.error) throw new Error(data.error || 'Fetch failed');
 
       document.getElementById('story').value = data.text;
+      activeOgImage = data.og_image || '';
       const badge = document.getElementById('source-badge');
       const link  = document.getElementById('source-link');
       link.href = url;
@@ -1506,7 +1509,9 @@ ${article}`;
 
       const img = document.createElement('img');
       img.crossOrigin = 'anonymous';
-      img.src = `/api/image?q=${imgQuery}`;
+      img.src = activeOgImage
+        ? `/api/image?direct=${encodeURIComponent(activeOgImage)}`
+        : `/api/image?q=${imgQuery}`;
       img.alt = s.imageQuery || '';
       img.onerror = () => {
         imgWrap.innerHTML = `<div class="hook-img-placeholder">🖼️</div>`;

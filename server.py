@@ -209,8 +209,9 @@ class Handler(SimpleHTTPRequestHandler):
     def _handle_image(self, parsed):
         from urllib.parse import parse_qs, quote
         params  = parse_qs(parsed.query)
+        direct  = params.get('direct', [''])[0]
         query   = params.get('q', ['australia'])[0]
-        img_url = self._wikipedia_image(query) or self._commons_image(query) or self._flickr_image(query)
+        img_url = direct or self._wikipedia_image(query) or self._commons_image(query) or self._flickr_image(query)
 
         if not img_url:
             self.send_response(502)
@@ -361,8 +362,24 @@ class Handler(SimpleHTTPRequestHandler):
                     'The site may block scrapers — try pasting the article text directly.'
                 )
 
+            # Extract og:image / twitter:image for use as hook slide photo
+            import re as _re
+            og_image = None
+            for pat in [
+                r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+                r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+                r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']',
+            ]:
+                m = _re.search(pat, html[:100000], _re.IGNORECASE)
+                if m:
+                    candidate = m.group(1).strip()
+                    if candidate.startswith('http'):
+                        og_image = candidate
+                        break
+
             self._cors(200)
-            self.wfile.write(json.dumps({'text': text}).encode())
+            self.wfile.write(json.dumps({'text': text, 'og_image': og_image}).encode())
 
         except Exception as e:
             self._cors(500)

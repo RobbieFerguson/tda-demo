@@ -6,8 +6,9 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         params = parse_qs(urlparse(self.path).query)
+        direct = params.get('direct', [''])[0]
         query  = params.get('q', ['australia'])[0]
-        url    = self._wikipedia_image(query) or self._commons_image(query) or self._flickr_image(query)
+        url    = direct or self._wikipedia_image(query) or self._commons_image(query) or self._flickr_image(query)
 
         if not url:
             self.send_response(404); self.end_headers(); return

@@ -996,6 +996,7 @@
 
 <script>
   let cur = 0, total = 0, captionFull = '';
+  let activeOgImage = '';
 
   /* ── Billi speech bubble ───────────────────── */
   const billiQuotes = [
@@ -1123,10 +1124,11 @@
 
     let storyText = '';
     try {
-      const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: story.url}) });
+      const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: story.url}) });
       const data = await res.json();
       if (res.ok && data.text && data.text.length > 80) {
         storyText = data.text;
+        activeOgImage = data.og_image || '';
         const badge = document.getElementById('source-badge');
         const link  = document.getElementById('source-link');
         try { link.textContent = new URL(story.url).hostname.replace('www.',''); } catch(e) { link.textContent = story.source; }
@@ -1162,11 +1164,12 @@
     btn.disabled = true; lbl.textContent = '…';
 
     try {
-      const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) });
+      const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url}) });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Fetch failed');
 
       document.getElementById('story').value = data.text;
+      activeOgImage = data.og_image || '';
       const badge = document.getElementById('source-badge');
       const link  = document.getElementById('source-link');
       link.href = url;
@@ -1373,7 +1376,7 @@ ${article}`;
       // Only fetch the specific document URL — org homepages are too generic
       if (s.url) {
         try {
-          const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: s.url}) });
+          const res  = await fetch('/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: s.url}) });
           const data = await res.json();
           if (res.ok && data.text && data.text.length > 100) {
             results.push({...s, content: data.text.slice(0, 4000), fetched: true});
@@ -1506,7 +1509,9 @@ ${article}`;
 
       const img = document.createElement('img');
       img.crossOrigin = 'anonymous';
-      img.src = `/image?q=${imgQuery}`;
+      img.src = activeOgImage
+        ? `/image?direct=${encodeURIComponent(activeOgImage)}`
+        : `/image?q=${imgQuery}`;
       img.alt = s.imageQuery || '';
       img.onerror = () => {
         imgWrap.innerHTML = `<div class="hook-img-placeholder">🖼️</div>`;
