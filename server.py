@@ -210,7 +210,7 @@ class Handler(SimpleHTTPRequestHandler):
         from urllib.parse import parse_qs, quote
         params  = parse_qs(parsed.query)
         query   = params.get('q', ['australia'])[0]
-        img_url = self._wikipedia_image(query) or self._flickr_image(query)
+        img_url = self._wikipedia_image(query) or self._commons_image(query) or self._flickr_image(query)
 
         if not img_url:
             self.send_response(502)
@@ -276,6 +276,39 @@ class Handler(SimpleHTTPRequestHandler):
                     if src:
                         src = re.sub(r'/\d+px-', '/1200px-', src)
                         return src
+        except Exception:
+            pass
+        return None
+
+    def _commons_image(self, query):
+        """Search Wikimedia Commons for a relevant photograph."""
+        from urllib.parse import quote
+        import re
+        try:
+            # One-shot: search Commons files and return imageinfo in same call
+            url = (
+                'https://commons.wikimedia.org/w/api.php?action=query'
+                f'&generator=search&gsrsearch={quote(query)}&gsrnamespace=6'
+                '&prop=imageinfo&iiprop=url|mime&iiurlwidth=1200'
+                '&format=json&gsrlimit=20'
+            )
+            req = urllib.request.Request(url, headers={'User-Agent': 'TDA-Carousel/1.0'})
+            with urllib.request.urlopen(req, timeout=8) as r:
+                pages = json.loads(r.read()).get('query', {}).get('pages', {})
+            if not pages:
+                return None
+            skip = {'svg+xml'}
+            skip_words = {'logo', 'flag', 'icon', 'map', 'diagram', 'coat', 'seal', 'emblem', 'symbol'}
+            for page in sorted(pages.values(), key=lambda p: int(p.get('index', 9999))):
+                info = (page.get('imageinfo') or [{}])[0]
+                mime  = info.get('mime', '')
+                thumb = info.get('thumburl') or info.get('url', '')
+                title = page.get('title', '').lower()
+                if mime in skip or not thumb:
+                    continue
+                if any(w in title for w in skip_words):
+                    continue
+                return thumb
         except Exception:
             pass
         return None

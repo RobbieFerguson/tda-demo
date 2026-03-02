@@ -7,7 +7,7 @@ class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         params = parse_qs(urlparse(self.path).query)
         query  = params.get('q', ['australia'])[0]
-        url    = self._wikipedia_image(query) or self._flickr_image(query)
+        url    = self._wikipedia_image(query) or self._commons_image(query) or self._flickr_image(query)
 
         if not url:
             self.send_response(404); self.end_headers(); return
@@ -61,6 +61,34 @@ class handler(BaseHTTPRequestHandler):
                     src = page.get('thumbnail', {}).get('source')
                     if src:
                         return re.sub(r'/\d+px-', '/1200px-', src)
+        except Exception:
+            pass
+        return None
+
+    def _commons_image(self, query):
+        try:
+            url = (
+                'https://commons.wikimedia.org/w/api.php?action=query'
+                f'&generator=search&gsrsearch={quote(query)}&gsrnamespace=6'
+                '&prop=imageinfo&iiprop=url|mime&iiurlwidth=1200'
+                '&format=json&gsrlimit=20'
+            )
+            req = urllib.request.Request(url, headers={'User-Agent': 'TDA-Carousel/1.0'})
+            with urllib.request.urlopen(req, timeout=8) as r:
+                pages = json.loads(r.read()).get('query', {}).get('pages', {})
+            if not pages:
+                return None
+            skip_words = {'logo','flag','icon','map','diagram','coat','seal','emblem','symbol'}
+            for page in sorted(pages.values(), key=lambda p: int(p.get('index', 9999))):
+                info  = (page.get('imageinfo') or [{}])[0]
+                mime  = info.get('mime', '')
+                thumb = info.get('thumburl') or info.get('url', '')
+                title = page.get('title', '').lower()
+                if mime == 'image/svg+xml' or not thumb:
+                    continue
+                if any(w in title for w in skip_words):
+                    continue
+                return thumb
         except Exception:
             pass
         return None
