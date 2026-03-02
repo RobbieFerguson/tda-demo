@@ -613,104 +613,55 @@
     /* ── Content slide (coral) ───────────────── */
     .slide-content {
       background: var(--coral);
-      padding: 16px 18px 14px;
-      gap: 12px;
+      padding: 14px 14px 12px;
+      gap: 10px;
     }
     .content-top {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
+      gap: 10px;
       flex-shrink: 0;
     }
     .content-label {
-      background: var(--white);
-      border-radius: 10px;
-      padding: 5px 14px 6px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 900; font-size: clamp(16px, 4.5cqw, 22px);
-      color: var(--coral);
-      line-height: 1.2;
-    }
-
-    /* Large bold text directly on background */
-    .content-body {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 16px;
-      min-height: 0;
-      overflow: hidden;
+      background: var(--white);
+      border-radius: 14px;
+      padding: 9px 16px 10px;
+      font-family: 'Anton', sans-serif;
+      font-size: clamp(26px, 7.5cqw, 40px);
+      color: var(--coral);
+      line-height: 1.05;
     }
-    .content-body p {
-      font-family: 'DM Sans', sans-serif;
-      font-size: clamp(20px, 5.8cqw, 32px);
-      font-weight: 800;
-      line-height: 1.25;
-      color: var(--white);
-      margin: 0;
-    }
-    .content-body p .hl {
-      color: var(--yellow);
-      font-weight: 900;
-    }
-
-    /* Image slides — card with image */
     .content-card {
       flex: 1;
       background: var(--white);
       border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       overflow: hidden;
       min-height: 0;
-      display: flex;
-      flex-direction: column;
-    }
-    .card-img {
-      width: 100%;
-      flex-shrink: 0;
-      background: #ddd;
-      position: relative;
-      height: 44%;
-    }
-    .card-img img {
-      width: 100%; height: 100%;
-      object-fit: cover; object-position: center 25%; display: block;
-    }
-    .card-img-caption {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: linear-gradient(transparent, rgba(0,0,0,0.55));
-      color: rgba(255,255,255,0.85);
-      font-size: 9px;
-      padding: 12px 8px 5px;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .card-text {
-      flex: 1;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      overflow: hidden;
     }
     .content-card p {
       font-family: 'DM Sans', sans-serif;
-      font-size: clamp(13px, 3.6cqw, 17px);
-      font-weight: 700;
+      font-size: clamp(16px, 4.6cqw, 23px);
+      font-weight: 500;
       line-height: 1.4;
       color: var(--black);
       margin: 0;
     }
     .content-card p .hl {
       color: var(--coral);
-      font-weight: 900;
+      text-decoration: underline;
+      font-weight: 700;
     }
     .content-footer {
       text-align: center;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 900; font-size: 10px;
-      color: rgba(255,255,255,0.75);
-      letter-spacing: .18em;
+      font-family: 'Anton', sans-serif;
+      font-size: clamp(10px, 2.8cqw, 14px);
+      color: var(--white);
+      letter-spacing: .12em;
       flex-shrink: 0;
     }
 
@@ -1302,7 +1253,7 @@ Create between 4 and 7 slides total. Choose the number that fits the story — d
 
 Always start with a hook slide. Always end with a CTA slide. Fill the middle with 2 to 5 content slides that cover what happened, why it matters, and what comes next.
 
-PARAGRAPHS: Each content slide gets exactly 2 paragraphs. Each paragraph is one punchy sentence — max 20 words. The text must be large and bold, so keep it short and impactful. Less is more.
+PARAGRAPHS: Each content slide gets 2 to 4 short paragraphs. Each paragraph is 1 to 2 sentences — aim for 20 to 35 words per paragraph. Keep them clear and punchy. Use a <hl>Term:</hl> highlight for any word that needs a plain-English explanation.
 
 ━━━ IMAGES ━━━
 
@@ -1324,32 +1275,36 @@ Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
       "type": "content",
       "label": "What happened",
       "paragraphs": [
-        "One punchy sentence. What happened, who, when. Max 20 words.",
-        "<hl>Key term:</hl> Plain English explanation of one important word from above."
+        "1-2 sentences on what happened, who was involved, and when.",
+        "<hl>Hard word:</hl> Plain English explanation of any tricky term used above.",
+        "One more fact that adds important detail."
       ]
     },
     {
       "type": "content",
       "label": "Why it happened",
       "paragraphs": [
-        "One sentence on the background. Why did this start? Max 20 words.",
-        "One key fact that explains the cause. Max 20 words."
+        "The background. Why did this situation start? Keep it simple.",
+        "One key fact that explains the cause.",
+        "How things got to this point."
       ]
     },
     {
       "type": "content",
       "label": "What people say",
       "paragraphs": [
-        "What one side said. Name and role. Max 20 words.",
-        "What the other side said. Name and role. Max 20 words."
+        "What one side said, with their name and role. Use their exact words if possible.",
+        "What the other side said, with their name and role.",
+        "<hl>Key point:</hl> The one fact both sides agree on, if any."
       ]
     },
     {
       "type": "content",
       "label": "What this means for you",
       "paragraphs": [
-        "The direct effect on everyday Australians. Specific. Max 20 words.",
-        "<hl>Bottom line:</hl> The one thing to remember. Max 15 words."
+        "The direct effect on everyday Australians. Be specific.",
+        "What happens next and when.",
+        "<hl>Bottom line:</hl> The one thing to remember from this story."
       ]
     },
     {
@@ -1558,10 +1513,10 @@ ${article}`;
       div.innerHTML = `
         <div class="content-top">
           <div class="content-label">${esc(s.label)}</div>
-          ${cup('white', 38)}
+          ${cup('white', 44)}
         </div>
-        <div class="content-body">${paras}</div>
-        <div class="content-footer">THE · DAILY · AUS</div>
+        <div class="content-card">${paras}</div>
+        <div class="content-footer">THE·DAILY·AUS</div>
       `;
 
     } else if (s.type === 'cta') {
