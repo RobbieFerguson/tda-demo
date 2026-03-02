@@ -1306,7 +1306,7 @@ PARAGRAPHS: Each content slide gets exactly 2 paragraphs. Each paragraph is one 
 
 ━━━ IMAGES ━━━
 
-Add "imageQuery" to 2 or 3 slides. The image must directly match what the slide is about. If the slide talks about Anthony Albanese, search for Anthony Albanese. If it is about the Reserve Bank building, search for that. Be specific. Write the query like a Wikipedia article title.
+Only the hook slide has an image. Do NOT add "imageQuery" to any content slides.
 
 ━━━ OUTPUT ━━━
 
@@ -1331,7 +1331,6 @@ Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
     {
       "type": "content",
       "label": "Why it happened",
-      "imageQuery": "Only add this if an image would help explain this slide. Be specific.",
       "paragraphs": [
         "One sentence on the background. Why did this start? Max 20 words.",
         "One key fact that explains the cause. Max 20 words."
@@ -1340,7 +1339,6 @@ Return ONLY valid JSON. No markdown. No explanation. Just the JSON object.
     {
       "type": "content",
       "label": "What people say",
-      "imageQuery": "Image of the main person quoted on this slide, if helpful",
       "paragraphs": [
         "What one side said. Name and role. Max 20 words.",
         "What the other side said. Name and role. Max 20 words."
@@ -1557,33 +1555,14 @@ ${article}`;
         `<p>${parseHL(p)}</p>`
       ).join('');
 
-      if (s.imageQuery) {
-        const imgQuery = encodeURIComponent(s.imageQuery);
-        div.innerHTML = `
-          <div class="content-top">
-            <div class="content-label">${esc(s.label)}</div>
-            ${cup('white', 38)}
-          </div>
-          <div class="content-card">
-            <div class="card-img">
-              <img src="/api/image?q=${imgQuery}" crossOrigin="anonymous"
-                   alt="${esc(s.imageQuery)}"
-                   onerror="this.parentElement.style.display='none'"/>
-            </div>
-            <div class="card-text">${paras}</div>
-          </div>
-          <div class="content-footer">THE · DAILY · AUS</div>
-        `;
-      } else {
-        div.innerHTML = `
-          <div class="content-top">
-            <div class="content-label">${esc(s.label)}</div>
-            ${cup('white', 38)}
-          </div>
-          <div class="content-body">${paras}</div>
-          <div class="content-footer">THE · DAILY · AUS</div>
-        `;
-      }
+      div.innerHTML = `
+        <div class="content-top">
+          <div class="content-label">${esc(s.label)}</div>
+          ${cup('white', 38)}
+        </div>
+        <div class="content-body">${paras}</div>
+        <div class="content-footer">THE · DAILY · AUS</div>
+      `;
 
     } else if (s.type === 'cta') {
       div.classList.add('slide-cta');
