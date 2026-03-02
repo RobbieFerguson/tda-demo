@@ -251,14 +251,17 @@ class Handler(SimpleHTTPRequestHandler):
             if not results:
                 return None
 
-            # Sort by word overlap with query so we pick the most relevant article
+            # Sort by word overlap; only keep articles with at least 1 matching word
             q_words = set(query.lower().split())
             results.sort(
                 key=lambda r: len(set(r['title'].lower().split()) & q_words),
                 reverse=True
             )
+            results = [r for r in results if len(set(r['title'].lower().split()) & q_words) >= 1]
+            if not results:
+                return None
 
-            # 2. Try each candidate until we find one with an image
+            # 2. Try each relevant candidate until we find one with an image
             for result in results[:4]:
                 title = result['title']
                 img_url = (

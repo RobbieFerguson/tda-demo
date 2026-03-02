@@ -120,11 +120,7 @@
       box-shadow: 0 2px 16px rgba(0,0,0,0.35);
     }
     .header-logo {
-      width: 32px; height: 32px;
-      background: var(--purple);
-      border-radius: 7px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 900; font-size: 11px; color: #fff;
+      display: flex; align-items: center; flex-shrink: 0;
     }
     .header h1 { color: #fff; font-size: 16px; font-weight: 700; }
     .header h1 span { color: var(--purple-light); }
@@ -370,28 +366,51 @@
       color: #999;
       margin-bottom: 8px;
     }
-    .sources-list { display: flex; flex-wrap: wrap; gap: 6px; }
-    .source-chip {
-      display: inline-flex;
-      align-items: center;
+    .sources-list { display: flex; flex-direction: column; gap: 6px; }
+    .source-card {
+      display: flex;
+      flex-direction: column;
       gap: 4px;
-      padding: 5px 11px;
+      padding: 9px 12px;
       background: #fff;
       border: 1.5px solid var(--border);
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--purple);
+      border-radius: 10px;
       text-decoration: none;
-      transition: all .18s;
-      max-width: 280px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      transition: border-color .18s;
+      min-width: 0;
     }
-    .source-chip:hover { border-color: var(--purple); background: var(--purple); color: #fff; }
-    .source-chip-plain { color: #777; cursor: default; }
-    .source-chip-plain:hover { background: #fff; border-color: var(--border); color: #777; }
+    a.source-card:hover { border-color: var(--purple); }
+    .source-card-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dark);
+      line-height: 1.3;
+    }
+    a.source-card .source-card-name { color: var(--purple); }
+    .source-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .source-type-badge {
+      font-size: 9px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .06em;
+      padding: 2px 6px; border-radius: 4px;
+      background: #f0f0f0; color: #888;
+      flex-shrink: 0;
+    }
+    .source-read-badge {
+      font-size: 9px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .06em;
+      padding: 2px 6px; border-radius: 4px;
+      background: #dcfce7; color: #166534;
+      flex-shrink: 0;
+    }
+    .source-org {
+      font-size: 10px; color: #999;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
 
     /* ── Cards ──────────────────────────────── */
     .card {
@@ -535,6 +554,7 @@
       background: var(--yellow);
       padding: 18px 20px 20px;
       justify-content: space-between;
+      gap: 10px;
     }
     .hook-handle {
       text-align: center;
@@ -587,7 +607,7 @@
     .slide-content {
       background: var(--coral);
       padding: 16px 18px 14px;
-      gap: 12px;
+      gap: 16px;
     }
     .content-top {
       display: flex;
@@ -617,8 +637,8 @@
     }
     .content-card p {
       font-family: 'DM Sans', sans-serif;
-      font-size: clamp(13px, 3.8cqw, 17px);
-      line-height: 1.55;
+      font-size: clamp(12px, 3.4cqw, 15px);
+      line-height: 1.5;
       color: var(--black);
     }
     .content-card .hl {
@@ -650,12 +670,12 @@
       font-family: 'DM Sans', sans-serif;
     }
     .content-card.has-img {
-      padding: 0 0 14px 0;
+      padding: 0 0 12px 0;
       overflow: hidden;
     }
-    .content-card.has-img .card-img { border-radius: 0; height: 44%; }
-    .content-card.has-img .card-text { padding: 12px 16px 0; display:flex; flex-direction:column; gap:8px; }
-    .content-card.has-img p { font-size: clamp(11px, 3.2cqw, 14px); }
+    .content-card.has-img .card-img { border-radius: 0; height: 38%; }
+    .content-card.has-img .card-text { padding: 8px 14px 0; display:flex; flex-direction:column; gap:5px; }
+    .content-card.has-img p { font-size: clamp(11px, 2.9cqw, 13px); line-height: 1.45; }
     .content-footer {
       text-align: center;
       font-family: 'DM Sans', sans-serif;
@@ -854,7 +874,7 @@
 </div>
 
 <div class="header">
-  <div class="header-logo">TDA</div>
+  <div class="header-logo" id="header-logo"></div>
   <h1>The Daily Aus <span>Carousel Generator</span></h1>
   <div class="billi-wrap" id="billi-wrap">
     <div class="billi-bubble" id="billi-bubble">Great piece!</div>
@@ -985,7 +1005,7 @@
         </div>
 
         <div class="sources-box" id="sources-box" style="display:none">
-          <div class="sources-label">Primary Sources</div>
+          <div class="sources-label" id="sources-label">Primary Sources</div>
           <div class="sources-list" id="sources-list"></div>
         </div>
 
@@ -1019,20 +1039,34 @@
   }
   function maybeBilli() { if (Math.random() < 0.4) billiBubble(); }
 
-  /* ── TDA Cup SVG ───────────────────────────── */
+  /* ── Official TDA brand logos ──────────────── */
+
+  // Right logo: takeaway cup with T·D·A stacked (main logo for carousel images)
+  // variant='indigo' → purple cup with white letters
+  // variant='white'  → white cup with purple letters
   function cup(variant = 'indigo', size = 40) {
-    const h = Math.round(size * 1.55);
-    const [fill, steam, txt, line] = variant === 'indigo'
-      ? ['#4F46E5', '#4F46E5', '#fff', 'rgba(255,255,255,0.25)']
-      : ['#fff',    '#fff',    '#4F46E5', 'rgba(79,70,229,0.15)'];
-    return `<svg class="tda-cup" width="${size}" height="${h}" viewBox="0 0 44 68" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13 13 C15 10.5 11 8 13 5.5 C15 3 11 1 13 0" stroke="${steam}" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <path d="M22 13 C24 10.5 20 8 22 5.5 C24 3 20 1 22 0" stroke="${steam}" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <path d="M31 13 C33 10.5 29 8 31 5.5 C33 3 29 1 31 0" stroke="${steam}" stroke-width="2" stroke-linecap="round" fill="none"/>
-      <path d="M4 16 L40 16 L35.5 58 Q34.5 64 22 64 Q9.5 64 8.5 58 Z" fill="${fill}"/>
-      <rect x="4" y="16" width="36" height="5" fill="${line}" rx="0"/>
-      <line x1="9" y1="30" x2="35" y2="30" stroke="${line}" stroke-width="1.5"/>
-      <text x="22" y="47" text-anchor="middle" fill="${txt}" font-size="13" font-weight="900" font-family="Arial Black, Arial, sans-serif" letter-spacing="1">TDA</text>
+    const h    = Math.round(size * 1.42);
+    const fill = variant === 'indigo' ? '#5333DC' : '#ffffff';
+    const txt  = variant === 'indigo' ? '#ffffff' : '#5333DC';
+    return `<svg class="tda-cup" width="${size}" height="${h}" viewBox="0 0 60 86" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 18 L57 13 L59 24 L3 27 Z" fill="${fill}"/>
+      <path d="M3 27 L59 24 L52 83 L10 83 Z" fill="${fill}"/>
+      <text x="30" y="47" text-anchor="middle" fill="${txt}" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif">T</text>
+      <text x="30" y="63" text-anchor="middle" fill="${txt}" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif">D</text>
+      <text x="30" y="79" text-anchor="middle" fill="${txt}" font-size="18" font-weight="900" font-family="Arial Black, Arial, sans-serif">A</text>
+    </svg>`;
+  }
+
+  // Left logo: purple cup with THE DAILY AUS (for header/branding areas)
+  function cupFull(size = 36) {
+    const h = Math.round(size * 1.28);
+    return `<svg class="tda-cup" width="${size}" height="${h}" viewBox="0 0 60 77" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="8" y="7" width="44" height="14" rx="3" fill="#5333DC"/>
+      <ellipse cx="30" cy="12" rx="14" ry="4.5" fill="rgba(255,255,255,0.2)"/>
+      <path d="M8 21 L52 21 L46 74 L14 74 Z" fill="#5333DC"/>
+      <text x="30" y="38" text-anchor="middle" fill="white" font-size="10" font-weight="900" font-family="Arial Black, Arial, sans-serif">THE</text>
+      <text x="30" y="52" text-anchor="middle" fill="white" font-size="10" font-weight="900" font-family="Arial Black, Arial, sans-serif">DAILY</text>
+      <text x="30" y="66" text-anchor="middle" fill="white" font-size="10" font-weight="900" font-family="Arial Black, Arial, sans-serif">AUS</text>
     </svg>`;
   }
 
@@ -1325,35 +1359,41 @@ ${story}`;
 
   /* ── Source identification prompt ──────────── */
   function buildSourcesPrompt(article) {
-    return `You are a research assistant for a journalism organisation. Read this news article and identify the official primary sources it draws from.
+    return `You are a research assistant for a journalism organisation. Your job is to identify ALL primary sources relevant to this news story — both those explicitly cited AND those that would be standard authoritative sources for this type of story.
 
-In journalism, a PRIMARY SOURCE is the original, authoritative document or statement — not another news article, blog, or commentary website. Accepted primary sources include:
-- Official government statements, press releases, or departmental reports
+In journalism, a PRIMARY SOURCE is the original, authoritative document or statement — NOT another news article, blog, or commentary site. Accepted types:
+- Official government statements, press releases, ministerial announcements
 - Court documents, judgements, or legal filings
-- UN, WHO, or other intergovernmental body statements and reports
-- Central bank or treasury publications and data
-- Official company statements or regulatory filings (ASX, SEC)
+- UN, WHO, IMF, World Bank, or other intergovernmental body reports/statements
+- Central bank, treasury, or financial regulator publications and data
+- Official company statements, earnings releases, or regulatory filings (ASX, SEC, ASIC)
 - Parliamentary Hansard transcripts or committee reports
-- Peer-reviewed research papers or official statistics (ABS, ONS, etc.)
-- Direct quotes from named officials speaking in their official capacity
+- Peer-reviewed research or official statistics (ABS, ONS, BLS, etc.)
+- Intergovernmental agreements, treaties, or formal communiqués
+- Direct quotes from named officials in their official capacity
 
-DO NOT list news articles, media outlets, or third-party commentary as primary sources.
+DO NOT include: news articles, media outlets, opinion pieces, or third-party commentary.
+
+Your task:
+1. Identify every primary source explicitly cited or quoted in the article
+2. Add any standard authoritative sources that would be directly relevant to this story's topic (e.g. if the story is about inflation, include the relevant statistical authority's CPI report; if about a court case, include the court; if about a government policy, include the relevant department)
+3. Aim for 4 to 6 sources total
+
+For each source, provide the most specific URL you can (the actual document/press-release page, not just the homepage). If you know the likely URL pattern for the organisation, use it. Only set url to null if you have no reasonable idea where the document lives.
 
 Return ONLY valid JSON. No markdown. No explanation.
 
 {
   "sources": [
     {
-      "name": "Full descriptive name (e.g. 'UN Secretary-General statement on Gaza ceasefire')",
-      "organisation": "Organisation that produced it (e.g. 'United Nations')",
-      "type": "statement|report|speech|data|document",
-      "url": "Direct URL if explicitly mentioned in the article text, otherwise null",
-      "org_url": "Main website of the organisation (e.g. 'https://un.org', 'https://abs.gov.au') — always include this"
+      "name": "Full descriptive name (e.g. 'RBA Statement on Monetary Policy – February 2025')",
+      "organisation": "Organisation that produced it (e.g. 'Reserve Bank of Australia')",
+      "type": "statement|report|speech|data|document|filing|judgement",
+      "url": "Most specific URL you can provide for the actual document or press release, or null",
+      "org_url": "Main website of the organisation (e.g. 'https://rba.gov.au') — always include"
     }
   ]
 }
-
-Return up to 4 of the most important primary sources. Fewer is fine if fewer exist.
 
 Article:
 ${article}`;
@@ -1362,19 +1402,19 @@ ${article}`;
   /* ── Fetch primary source content ──────────── */
   async function fetchPrimarySources(sources) {
     const results = [];
-    for (const s of (sources || []).slice(0, 4)) {
-      const tryUrl = s.url || s.org_url;
-      if (tryUrl) {
+    for (const s of (sources || []).slice(0, 6)) {
+      // Only fetch the specific document URL — org homepages are too generic
+      if (s.url) {
         try {
-          const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: tryUrl}) });
+          const res  = await fetch('/api/fetch', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({url: s.url}) });
           const data = await res.json();
           if (res.ok && data.text && data.text.length > 100) {
-            results.push({...s, content: data.text.slice(0, 3000)});
+            results.push({...s, content: data.text.slice(0, 4000), fetched: true});
             continue;
           }
         } catch(e) {}
       }
-      results.push(s);
+      results.push({...s, fetched: false});
     }
     return results;
   }
@@ -1382,10 +1422,15 @@ ${article}`;
   /* ── Carousel prompt with source context ───── */
   function buildCarouselPrompt(article, sources) {
     const withContent = (sources || []).filter(s => s.content);
+    const identified  = (sources || []).filter(s => !s.content);
     let ctx = '';
     if (withContent.length > 0) {
-      ctx = '\n\n━━━ PRIMARY SOURCE DOCUMENTS (use these as your factual basis) ━━━\n\n' +
-        withContent.map(s => `SOURCE: ${s.name} — ${s.organisation}\n${s.content}`).join('\n\n---\n\n');
+      ctx += '\n\n━━━ PRIMARY SOURCE DOCUMENTS (read and verified — ground your facts in these) ━━━\n\n' +
+        withContent.map(s => `[${s.type?.toUpperCase() || 'SOURCE'}] ${s.name} — ${s.organisation}\n${s.content}`).join('\n\n---\n\n');
+    }
+    if (identified.length > 0) {
+      ctx += '\n\n━━━ ADDITIONAL PRIMARY SOURCES (identified — cite by name where relevant) ━━━\n' +
+        identified.map(s => `• ${s.name} (${s.organisation})`).join('\n');
     }
     return buildPrompt(article + ctx);
   }
@@ -1432,16 +1477,21 @@ ${article}`;
     // Show primary sources panel
     const sourcesBox  = document.getElementById('sources-box');
     const sourcesList = document.getElementById('sources-list');
+    const sourcesLbl  = document.getElementById('sources-label');
     const allSources  = sources || [];
     if (allSources.length > 0) {
+      const readCount = allSources.filter(s => s.fetched).length;
+      sourcesLbl.textContent = `Primary Sources (${allSources.length})` + (readCount > 0 ? ` · ${readCount} read` : '');
       sourcesList.innerHTML = allSources.map(s => {
-        if (s.url) {
-          return `<a class="source-chip" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.name)}">↗ ${esc(s.name)}</a>`;
-        }
-        if (s.org_url) {
-          return `<a class="source-chip" href="${esc(s.org_url)}" target="_blank" rel="noopener" title="${esc(s.name)}">${esc(s.name)}</a>`;
-        }
-        return `<span class="source-chip source-chip-plain" title="${esc(s.organisation || '')}">${esc(s.name)}</span>`;
+        const link = s.url || s.org_url;
+        const readBadge = s.fetched ? `<span class="source-read-badge">✓ Read</span>` : '';
+        const typeBadge = `<span class="source-type-badge">${esc(s.type || 'source')}</span>`;
+        const inner = `
+          <div class="source-card-name">${s.url ? '↗ ' : ''}${esc(s.name)}</div>
+          <div class="source-card-meta">${readBadge}${typeBadge}<span class="source-org">${esc(s.organisation || '')}</span></div>
+        `;
+        if (link) return `<a class="source-card" href="${esc(link)}" target="_blank" rel="noopener">${inner}</a>`;
+        return `<div class="source-card">${inner}</div>`;
       }).join('');
       sourcesBox.style.display = 'block';
     } else {
@@ -1524,7 +1574,7 @@ ${article}`;
       div.innerHTML = `
         <div class="cta-deco"></div>
         <div class="cta-tagline">THE DAILY AUS</div>
-        ${cup('indigo', 52)}
+        ${cup('white', 52)}
         <h2>${esc(s.headline)}</h2>
         <p>${esc(s.subtext)}</p>
         <div class="cta-handle">@thedailyaus</div>
@@ -1648,6 +1698,7 @@ ${article}`;
   })();
 
   /* ── Init ──────────────────────────────────── */
+  document.getElementById('header-logo').innerHTML = cupFull(32);
   loadNews();
   setInterval(loadNews, 5 * 60 * 1000);
 </script>
