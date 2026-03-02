@@ -1464,7 +1464,29 @@ ${article}`;
       sourcesBox.style.display = 'none';
     }
 
+    requestAnimationFrame(fitAllCards);
     setTimeout(billiBubble, 600);
+  }
+
+  /* Auto-shrink font on content slides until text fits the card */
+  function fitAllCards() {
+    document.querySelectorAll('.slide-content').forEach(slide => {
+      const card = slide.querySelector('.content-card');
+      if (!card) return;
+
+      // Temporarily show hidden slides so we can measure them
+      const hidden = getComputedStyle(slide).display === 'none';
+      if (hidden) { slide.style.display = 'flex'; slide.style.visibility = 'hidden'; }
+
+      let fs = parseFloat(getComputedStyle(card).fontSize);
+      let safety = 40;
+      while (card.scrollHeight > card.clientHeight + 1 && fs > 11 && safety-- > 0) {
+        fs -= 0.5;
+        card.style.fontSize = fs + 'px';
+      }
+
+      if (hidden) { slide.style.display = ''; slide.style.visibility = ''; }
+    });
   }
 
   /* ── Build slide elements ───────────────────── */
