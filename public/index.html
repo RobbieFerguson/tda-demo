@@ -1237,7 +1237,7 @@
 
 VOCABULARY: Only use words from the 3,000 most common English words. If you must use a harder word (like "parliament" or "inflation"), explain it straight away in brackets. Example: "The Reserve Bank (the government body that sets interest rates) said..."
 
-SENTENCES: Keep every sentence under 20 words. Use full stops. No sentence fragments.
+SENTENCES: Keep every sentence under 20 words. Use full stops. No sentence fragments. Never use double hyphens (--) or em dashes (—). Use a comma or a full stop instead.
 
 TONE: Write like you are talking to a friend. Warm. Direct. Clear. Never talk down to the reader.
 
@@ -1613,7 +1613,7 @@ ${article}`;
     el.textContent = msg; el.style.display = 'block';
   }
   function esc(s='') {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return s.replace(/—|--/g, ',').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
