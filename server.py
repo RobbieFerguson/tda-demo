@@ -257,7 +257,7 @@ class Handler(SimpleHTTPRequestHandler):
                 key=lambda r: len(set(r['title'].lower().split()) & q_words),
                 reverse=True
             )
-            results = [r for r in results if len(set(r['title'].lower().split()) & q_words) >= 1]
+            results = [r for r in results if len(set(r['title'].lower().split()) & q_words) >= 2]
             if not results:
                 return None
 
