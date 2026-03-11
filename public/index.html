@@ -1493,26 +1493,22 @@ ${article}`;
     if (s.type === 'hook') {
       div.classList.add('slide-hook');
 
-      const imgQuery = encodeURIComponent(s.imageQuery || 'australia news');
-      const imgWrap  = document.createElement('div');
-      imgWrap.className = 'hook-img-wrap';
-
-      const img = document.createElement('img');
-      img.crossOrigin = 'anonymous';
-      img.src = activeOgImage
-        ? `/api/image?direct=${encodeURIComponent(activeOgImage)}`
-        : `/api/image?q=${imgQuery}`;
-      img.alt = s.imageQuery || '';
-      img.onerror = () => {
-        imgWrap.innerHTML = `<div class="hook-img-placeholder">🖼️</div>`;
-      };
-      imgWrap.appendChild(img);
-
       div.innerHTML = `
         <div class="hook-handle">@TheDailyAus</div>
         <div class="hook-headline">${esc(s.headline)}</div>
       `;
-      div.appendChild(imgWrap);
+
+      if (activeOgImage) {
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'hook-img-wrap';
+        const img = document.createElement('img');
+        img.crossOrigin = 'anonymous';
+        img.src = `/api/image?direct=${encodeURIComponent(activeOgImage)}`;
+        img.alt = s.imageQuery || '';
+        img.onerror = () => imgWrap.remove();
+        imgWrap.appendChild(img);
+        div.appendChild(imgWrap);
+      }
       div.innerHTML += `
         <div class="hook-footer">
           <div>
